@@ -1,0 +1,127 @@
+import React, { useState } from 'react';
+import { Link } from '@inertiajs/react';
+import DashboardLayout from '@/Layouts/DashboardLayout';
+import type { PageProps, Invoice } from '@/types';
+
+interface InvoicesProps extends PageProps {
+    invoices?: Invoice[];
+}
+
+export default function Invoices({ auth, invoices = [] }: InvoicesProps) {
+    const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'paid'>('all');
+
+    // Demo invoices
+    const demoInvoices: Invoice[] = invoices.length > 0 ? invoices : [
+        { id: '1', business_id: '1', invoice_number: 'INV-001', party: { id: '1', business_id: '1', name: 'করিম সাহেব', type: 'customer', balance: 5000, is_active: true, created_at: '', updated_at: '' }, total_amount: 5500, paid_amount: 3000, due_amount: 2500, status: 'partial', invoice_date: '2026-01-15', items: [], created_at: '', updated_at: '' },
+        { id: '2', business_id: '1', invoice_number: 'INV-002', party: { id: '2', business_id: '1', name: 'রহিম আলী', type: 'customer', balance: 0, is_active: true, created_at: '', updated_at: '' }, total_amount: 3200, paid_amount: 3200, due_amount: 0, status: 'paid', invoice_date: '2026-01-14', items: [], created_at: '', updated_at: '' },
+        { id: '3', business_id: '1', invoice_number: 'INV-003', party: { id: '3', business_id: '1', name: 'সালমা বেগম', type: 'customer', balance: 2800, is_active: true, created_at: '', updated_at: '' }, total_amount: 2800, paid_amount: 0, due_amount: 2800, status: 'pending', invoice_date: '2026-01-14', items: [], created_at: '', updated_at: '' },
+        { id: '4', business_id: '1', invoice_number: 'INV-004', party: { id: '4', business_id: '1', name: 'জামাল উদ্দিন', type: 'customer', balance: 0, is_active: true, created_at: '', updated_at: '' }, total_amount: 8500, paid_amount: 8500, due_amount: 0, status: 'paid', invoice_date: '2026-01-13', items: [], created_at: '', updated_at: '' },
+    ];
+
+    const formatTaka = (amount: number) => '৳ ' + amount.toLocaleString('bn-BD');
+
+    const filteredInvoices = demoInvoices.filter(inv => {
+        if (activeTab === 'pending') return inv.status === 'pending' || inv.status === 'partial';
+        if (activeTab === 'paid') return inv.status === 'paid';
+        return true;
+    });
+
+    const totalAmount = demoInvoices.reduce((sum, inv) => sum + inv.total_amount, 0);
+    const totalPaid = demoInvoices.reduce((sum, inv) => sum + inv.paid_amount, 0);
+    const totalDue = demoInvoices.reduce((sum, inv) => sum + inv.due_amount, 0);
+
+    return (
+        <DashboardLayout title="বিল/চালান">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                <div>
+                    <h1 className="text-2xl font-bold text-white">বিল/চালান</h1>
+                    <p className="text-gray-400">সকল বিল দেখুন ও নতুন বিল তৈরি করুন</p>
+                </div>
+                <Link
+                    href="/invoices/create"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-white font-medium"
+                    style={{ backgroundColor: '#006A4E' }}
+                >
+                    <span>➕</span>
+                    <span>নতুন বিল</span>
+                </Link>
+            </div>
+
+            {/* Summary Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                <div className="bg-gray-800 rounded-xl p-4 border border-gray-700">
+                    <p className="text-gray-400 text-sm">মোট বিল</p>
+                    <p className="text-2xl font-bold text-white">{formatTaka(totalAmount)}</p>
+                </div>
+                <div className="bg-gray-800 rounded-xl p-4 border border-gray-700">
+                    <p className="text-gray-400 text-sm">আদায়</p>
+                    <p className="text-2xl font-bold text-green-400">{formatTaka(totalPaid)}</p>
+                </div>
+                <div className="bg-gray-800 rounded-xl p-4 border border-gray-700">
+                    <p className="text-gray-400 text-sm">বাকি</p>
+                    <p className="text-2xl font-bold text-red-400">{formatTaka(totalDue)}</p>
+                </div>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex gap-2 mb-6">
+                {[
+                    { key: 'all', label: 'সব' },
+                    { key: 'pending', label: 'বাকি আছে' },
+                    { key: 'paid', label: 'পরিশোধিত' },
+                ].map(tab => (
+                    <button
+                        key={tab.key}
+                        onClick={() => setActiveTab(tab.key as any)}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === tab.key
+                                ? 'text-white'
+                                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                            }`}
+                        style={activeTab === tab.key ? { backgroundColor: '#006A4E' } : {}}
+                    >
+                        {tab.label}
+                    </button>
+                ))}
+            </div>
+
+            {/* Invoices List */}
+            <div className="bg-gray-800 rounded-2xl border border-gray-700">
+                <div className="divide-y divide-gray-700">
+                    {filteredInvoices.map(invoice => (
+                        <Link
+                            key={invoice.id}
+                            href={`/invoices/${invoice.id}`}
+                            className="block p-4 hover:bg-gray-700/50 transition-colors"
+                        >
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-lg ${invoice.status === 'paid' ? 'bg-green-500/20' :
+                                            invoice.status === 'partial' ? 'bg-yellow-500/20' : 'bg-red-500/20'
+                                        }`}>
+                                        🧾
+                                    </div>
+                                    <div>
+                                        <p className="font-medium text-white">{invoice.invoice_number}</p>
+                                        <p className="text-sm text-gray-400">
+                                            {invoice.party?.name} • {new Date(invoice.invoice_date).toLocaleDateString('bn-BD')}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <p className="font-bold text-white">{formatTaka(invoice.total_amount)}</p>
+                                    <span className={`text-xs px-2 py-0.5 rounded-full ${invoice.status === 'paid' ? 'bg-green-500/20 text-green-400' :
+                                            invoice.status === 'partial' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'
+                                        }`}>
+                                        {invoice.status === 'paid' ? 'পরিশোধিত' :
+                                            invoice.status === 'partial' ? `বাকি ${formatTaka(invoice.due_amount)}` : 'বাকি'}
+                                    </span>
+                                </div>
+                            </div>
+                        </Link>
+                    ))}
+                </div>
+            </div>
+        </DashboardLayout>
+    );
+}
