@@ -19,7 +19,7 @@ export default function GuestLayout({ children, title }: GuestLayoutProps) {
                                 <span className="text-white text-xl font-bold">হি</span>
                             </div>
                             <span className="text-xl font-bold text-gray-900 dark:text-white">
-                                হিসাব করি
+                                হিসাব রাখি
                             </span>
                         </a>
                     </div>
@@ -32,7 +32,7 @@ export default function GuestLayout({ children, title }: GuestLayoutProps) {
 
                 {/* Footer */}
                 <footer className="py-6 px-4 text-center text-sm text-gray-500 dark:text-gray-400">
-                    <p>© {new Date().getFullYear()} হিসাব করি। সর্বস্বত্ব সংরক্ষিত।</p>
+                    <p>© {new Date().getFullYear()} হিসাব রাখি। সর্বস্বত্ব সংরক্ষিত।</p>
                 </footer>
             </div>
         </>

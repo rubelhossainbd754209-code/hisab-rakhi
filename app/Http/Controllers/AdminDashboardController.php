@@ -2,14 +2,23 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Business;
 use App\Models\CloudinaryAccount;
 use App\Models\User;
+use App\Services\SubscriptionService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class AdminDashboardController extends Controller
 {
+    protected SubscriptionService $subscriptionService;
+
+    public function __construct(SubscriptionService $subscriptionService)
+    {
+        $this->subscriptionService = $subscriptionService;
+    }
+
     /**
      * Display the admin dashboard
      */
@@ -37,6 +46,40 @@ class AdminDashboardController extends Controller
             ->whereMonth('created_at', Carbon::now()->month)
             ->whereYear('created_at', Carbon::now()->year)
             ->count();
+
+        // Business/Store Statistics
+        $totalStores = Business::count();
+        $liveStores = Business::online()->count();
+        
+        // Subscription Stats
+        $subscriptionStats = $this->subscriptionService->getAdminStats();
+        
+        // Get live stores list
+        $liveStoresList = Business::online()
+            ->with(['user:id,name,email,profile_image', 'template:id,name,category_id', 'template.category:id,name,icon'])
+            ->orderBy('last_activity_at', 'desc')
+            ->take(20)
+            ->get()
+            ->map(function ($business) {
+                return [
+                    'id' => $business->id,
+                    'name' => $business->name,
+                    'slug' => $business->slug,
+                    'logo' => $business->logo,
+                    'owner' => $business->user ? [
+                        'name' => $business->user->name,
+                        'email' => $business->user->email,
+                        'profile_image' => $business->user->profile_image,
+                    ] : null,
+                    'template' => $business->template ? [
+                        'name' => $business->template->name,
+                        'category' => $business->template->category?->name,
+                        'icon' => $business->template->category?->icon,
+                    ] : null,
+                    'last_activity' => $business->last_activity_at?->diffForHumans(),
+                    'last_activity_at' => $business->last_activity_at,
+                ];
+            });
 
         // User growth data for last 7 days
         $userGrowth = [];
@@ -110,10 +153,14 @@ class AdminDashboardController extends Controller
                 'today_users' => $todayUsers,
                 'week_users' => $weekUsers,
                 'month_users' => $monthUsers,
+                'total_stores' => $totalStores,
+                'live_stores' => $liveStores,
             ],
+            'subscription_stats' => $subscriptionStats,
             'user_growth' => $userGrowth,
             'recent_users' => $recentUsers,
             'pending_approvals' => $pendingApprovals,
+            'live_stores_list' => $liveStoresList,
             'system_status' => $systemStatus,
         ]);
     }

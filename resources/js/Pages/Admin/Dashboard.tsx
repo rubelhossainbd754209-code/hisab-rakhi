@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import type { PageProps } from '@/types';
@@ -21,6 +21,24 @@ interface GrowthData {
     count: number;
 }
 
+interface LiveStore {
+    id: number;
+    name: string;
+    slug: string;
+    logo: string | null;
+    owner: {
+        name: string;
+        email: string;
+        profile_image: string | null;
+    } | null;
+    template: {
+        name: string;
+        category: string;
+        icon: string;
+    } | null;
+    last_activity: string;
+}
+
 interface SystemStatus {
     server: string;
     database: string;
@@ -29,6 +47,16 @@ interface SystemStatus {
     version: string;
     php_version: string;
     laravel_version: string;
+}
+
+interface SubscriptionStats {
+    total_stores: number;
+    with_subscription: number;
+    trial_stores: number;
+    premium_stores: number;
+    expired_stores: number;
+    total_revenue: number;
+    monthly_revenue: number;
 }
 
 interface AdminDashboardProps extends PageProps {
@@ -41,22 +69,29 @@ interface AdminDashboardProps extends PageProps {
         today_users: number;
         week_users: number;
         month_users: number;
+        total_stores: number;
+        live_stores: number;
     };
+    subscription_stats: SubscriptionStats;
     user_growth: GrowthData[];
     recent_users: UserInfo[];
     pending_approvals: UserInfo[];
+    live_stores_list: LiveStore[];
     system_status: SystemStatus;
 }
 
 export default function AdminDashboard({
     auth,
     stats,
+    subscription_stats,
     user_growth,
     recent_users,
     pending_approvals,
+    live_stores_list,
     system_status
 }: AdminDashboardProps) {
     const { flash } = usePage().props as any;
+    const [showLiveStores, setShowLiveStores] = useState(false);
 
     const handleQuickApprove = (userId: number) => {
         router.post(`/admin/users/${userId}/quick-approve`);
@@ -79,6 +114,59 @@ export default function AdminDashboard({
                 <h1 className="text-2xl font-bold text-white">স্বাগতম, {auth.user?.name}! 👋</h1>
                 <p className="text-gray-400">সিস্টেম ওভারভিউ ও ম্যানেজমেন্ট</p>
             </div>
+
+            {/* Live Stores Banner */}
+            <div
+                onClick={() => setShowLiveStores(true)}
+                className="mb-6 bg-gradient-to-r from-green-500/20 via-emerald-500/20 to-teal-500/20 rounded-2xl p-4 border border-green-500/30 cursor-pointer hover:border-green-400/50 transition-all"
+            >
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <div className="relative">
+                            <div className="w-14 h-14 bg-green-500/30 rounded-xl flex items-center justify-center">
+                                <span className="text-2xl">🏪</span>
+                            </div>
+                            <span className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full animate-pulse"></span>
+                        </div>
+                        <div>
+                            <p className="text-gray-400 text-sm">এখন সক্রিয় স্টোর</p>
+                            <div className="flex items-center gap-2">
+                                <span className="text-3xl font-bold text-green-400">{stats.live_stores}</span>
+                                <span className="text-gray-500">/ {stats.total_stores} মোট</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="text-green-400 flex items-center gap-2">
+                        <span className="text-sm">বিস্তারিত দেখুন</span>
+                        <span>→</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Subscription Stats */}
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+                <div className="bg-gradient-to-br from-cyan-500/20 to-blue-500/10 rounded-xl p-4 border border-cyan-500/30">
+                    <p className="text-xs text-cyan-300 mb-1">🆓 ট্রায়াল স্টোর</p>
+                    <p className="text-2xl font-bold text-cyan-400">{subscription_stats.trial_stores}</p>
+                </div>
+                <div className="bg-gradient-to-br from-amber-500/20 to-yellow-500/10 rounded-xl p-4 border border-amber-500/30">
+                    <p className="text-xs text-amber-300 mb-1">💎 প্রিমিয়াম স্টোর</p>
+                    <p className="text-2xl font-bold text-amber-400">{subscription_stats.premium_stores}</p>
+                </div>
+                <div className="bg-gradient-to-br from-red-500/20 to-rose-500/10 rounded-xl p-4 border border-red-500/30">
+                    <p className="text-xs text-red-300 mb-1">⏰ মেয়াদ শেষ</p>
+                    <p className="text-2xl font-bold text-red-400">{subscription_stats.expired_stores}</p>
+                </div>
+                <div className="bg-gradient-to-br from-emerald-500/20 to-green-500/10 rounded-xl p-4 border border-emerald-500/30">
+                    <p className="text-xs text-emerald-300 mb-1">💰 মোট আয়</p>
+                    <p className="text-2xl font-bold text-emerald-400">৳{subscription_stats.total_revenue.toLocaleString()}</p>
+                </div>
+                <div className="bg-gradient-to-br from-violet-500/20 to-purple-500/10 rounded-xl p-4 border border-violet-500/30">
+                    <p className="text-xs text-violet-300 mb-1">📅 এই মাসে</p>
+                    <p className="text-2xl font-bold text-violet-400">৳{subscription_stats.monthly_revenue.toLocaleString()}</p>
+                </div>
+            </div>
+
 
             {/* Main Stats Grid */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -204,8 +292,8 @@ export default function AdminDashboard({
                                     <div className="flex items-center gap-2">
                                         <span className="text-xs text-gray-500">{user.created_at}</span>
                                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.is_approved
-                                                ? 'bg-green-500/20 text-green-400'
-                                                : 'bg-yellow-500/20 text-yellow-400'
+                                            ? 'bg-green-500/20 text-green-400'
+                                            : 'bg-yellow-500/20 text-yellow-400'
                                             }`}>
                                             {user.is_approved ? '✅' : '⏳'}
                                         </span>
@@ -278,18 +366,25 @@ export default function AdminDashboard({
                                 <span>সব ব্যবহারকারী</span>
                             </Link>
                             <Link
+                                href="/admin/categories"
+                                className="flex items-center gap-3 p-3 rounded-lg bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 transition-colors"
+                            >
+                                <span>📁</span>
+                                <span>ক্যাটাগরি</span>
+                            </Link>
+                            <Link
+                                href="/admin/templates"
+                                className="flex items-center gap-3 p-3 rounded-lg bg-pink-500/10 text-pink-400 hover:bg-pink-500/20 transition-colors"
+                            >
+                                <span>🎨</span>
+                                <span>টেমপ্লেট</span>
+                            </Link>
+                            <Link
                                 href="/admin/cloudinary"
                                 className="flex items-center gap-3 p-3 rounded-lg bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 transition-colors"
                             >
                                 <span>☁️</span>
-                                <span>Cloudinary সেটিংস</span>
-                            </Link>
-                            <Link
-                                href="/admin/settings"
-                                className="flex items-center gap-3 p-3 rounded-lg bg-gray-700/50 text-gray-300 hover:bg-gray-700 transition-colors"
-                            >
-                                <span>⚙️</span>
-                                <span>সিস্টেম সেটিংস</span>
+                                <span>Cloudinary</span>
                             </Link>
                         </div>
                     </div>
@@ -328,6 +423,109 @@ export default function AdminDashboard({
                     </div>
                 </div>
             </div>
+
+            {/* Live Stores Modal */}
+            {showLiveStores && (
+                <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-gray-900 rounded-2xl border border-gray-700 w-full max-w-2xl max-h-[80vh] overflow-hidden">
+                        <div className="flex items-center justify-between p-6 border-b border-gray-700 bg-gradient-to-r from-green-500/20 to-emerald-500/10">
+                            <div className="flex items-center gap-3">
+                                <div className="relative">
+                                    <div className="w-12 h-12 bg-green-500/30 rounded-xl flex items-center justify-center text-xl">
+                                        🏪
+                                    </div>
+                                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-bold text-white">লাইভ স্টোর</h2>
+                                    <p className="text-green-400 text-sm">{stats.live_stores} টি স্টোর এখন সক্রিয়</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setShowLiveStores(false)}
+                                className="text-gray-400 hover:text-white text-2xl"
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        <div className="p-4 overflow-y-auto max-h-[60vh]">
+                            {live_stores_list.length > 0 ? (
+                                <div className="space-y-3">
+                                    {live_stores_list.map((store) => (
+                                        <div
+                                            key={store.id}
+                                            className="bg-gray-800 rounded-xl p-4 border border-gray-700 hover:border-green-500/30 transition-colors"
+                                        >
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="relative">
+                                                        {store.logo ? (
+                                                            <img
+                                                                src={store.logo}
+                                                                alt={store.name}
+                                                                className="w-12 h-12 rounded-xl object-cover"
+                                                            />
+                                                        ) : (
+                                                            <div className="w-12 h-12 bg-gray-700 rounded-xl flex items-center justify-center text-xl">
+                                                                {store.template?.icon || '🏪'}
+                                                            </div>
+                                                        )}
+                                                        <span className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-gray-800"></span>
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="font-semibold text-white">{store.name}</h4>
+                                                        <p className="text-sm text-gray-400">
+                                                            {store.template?.category || 'সাধারণ'}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-xs text-gray-500">শেষ কার্যক্রম</p>
+                                                    <p className="text-sm text-green-400">{store.last_activity}</p>
+                                                </div>
+                                            </div>
+
+                                            {store.owner && (
+                                                <div className="mt-3 pt-3 border-t border-gray-700 flex items-center gap-2">
+                                                    {store.owner.profile_image ? (
+                                                        <img
+                                                            src={store.owner.profile_image}
+                                                            alt={store.owner.name}
+                                                            className="w-6 h-6 rounded-full object-cover"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-6 h-6 bg-gray-600 rounded-full flex items-center justify-center text-xs text-white">
+                                                            {store.owner.name.charAt(0)}
+                                                        </div>
+                                                    )}
+                                                    <span className="text-sm text-gray-400">{store.owner.name}</span>
+                                                    <span className="text-xs text-gray-600">({store.owner.email})</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-12">
+                                    <div className="text-5xl mb-4">😴</div>
+                                    <h3 className="text-xl font-semibold text-white mb-2">কোনো স্টোর সক্রিয় নেই</h3>
+                                    <p className="text-gray-400">এই মুহূর্তে কোনো স্টোরে কাজ হচ্ছে না</p>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="p-4 border-t border-gray-700">
+                            <button
+                                onClick={() => setShowLiveStores(false)}
+                                className="w-full px-4 py-2 bg-gray-700 text-white rounded-xl hover:bg-gray-600"
+                            >
+                                বন্ধ করুন
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </AdminLayout>
     );
 }

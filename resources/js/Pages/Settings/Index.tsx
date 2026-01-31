@@ -1,15 +1,18 @@
-import React from 'react';
+import { Link } from '@inertiajs/react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
 import type { PageProps } from '@/types';
 
 export default function Settings({ auth }: PageProps) {
+    const isPremium = auth.business?.is_premium;
+    const isTrial = auth.business?.is_trial;
+
     const settingsSections = [
         {
             title: 'ব্যবসার তথ্য',
             icon: '🏪',
             items: [
-                { name: 'ব্যবসার নাম ও ঠিকানা', href: '/settings/business' },
-                { name: 'লোগো পরিবর্তন', href: '/settings/logo' },
+                { name: 'ব্যবসার নাম ও ঠিকানা', href: '/settings/business', badge: isPremium ? null : '🔒 প্রিমিয়াম' },
+                { name: 'লোগো পরিবর্তন', href: '/settings/business', badge: isPremium ? null : '🔒 প্রিমিয়াম' },
                 { name: 'বিল টেমপ্লেট', href: '/settings/invoice-template' },
             ]
         },
@@ -49,6 +52,44 @@ export default function Settings({ auth }: PageProps) {
                 <p className="text-gray-400">অ্যাপ্লিকেশন ও অ্যাকাউন্ট সেটিংস</p>
             </div>
 
+            {/* Subscription Status Banner */}
+            <div className={`mb-6 p-4 rounded-xl border ${isPremium
+                ? 'bg-emerald-500/10 border-emerald-500/30'
+                : isTrial
+                    ? 'bg-amber-500/10 border-amber-500/30'
+                    : 'bg-red-500/10 border-red-500/30'
+                }`}>
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <span className="text-2xl">
+                            {isPremium ? '⭐' : isTrial ? '🎁' : '⚠️'}
+                        </span>
+                        <div>
+                            <h3 className={`font-semibold ${isPremium ? 'text-emerald-400' : isTrial ? 'text-amber-400' : 'text-red-400'
+                                }`}>
+                                {isPremium ? 'প্রিমিয়াম অ্যাকাউন্ট' : isTrial ? `ট্রায়াল (${auth.business?.days_remaining} দিন বাকি)` : 'কোনো সাবস্ক্রিপশন নেই'}
+                            </h3>
+                            <p className="text-gray-400 text-sm">
+                                {isPremium
+                                    ? 'সকল প্রিমিয়াম ফিচার আনলক করা আছে।'
+                                    : isTrial
+                                        ? 'ট্রায়াল শেষ হওয়ার আগে আপগ্রেড করুন।'
+                                        : 'প্রিমিয়াম ফিচার ব্যবহার করতে আপগ্রেড করুন।'
+                                }
+                            </p>
+                        </div>
+                    </div>
+                    {!isPremium && (
+                        <Link
+                            href="/pricing"
+                            className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-medium hover:from-amber-600 hover:to-orange-600 transition-all text-sm"
+                        >
+                            🚀 আপগ্রেড করুন
+                        </Link>
+                    )}
+                </div>
+            </div>
+
             {/* Settings Sections */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {settingsSections.map(section => (
@@ -59,14 +100,21 @@ export default function Settings({ auth }: PageProps) {
                         </div>
                         <div className="space-y-2">
                             {section.items.map(item => (
-                                <a
-                                    key={item.href}
+                                <Link
+                                    key={item.href + item.name}
                                     href={item.href}
                                     className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-700 transition-colors group"
                                 >
-                                    <span className="text-gray-300 group-hover:text-white">{item.name}</span>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-gray-300 group-hover:text-white">{item.name}</span>
+                                        {item.badge && (
+                                            <span className="text-xs px-2 py-0.5 bg-amber-500/20 text-amber-400 rounded-full">
+                                                {item.badge}
+                                            </span>
+                                        )}
+                                    </div>
                                     <span className="text-gray-500 group-hover:text-gray-300">→</span>
-                                </a>
+                                </Link>
                             ))}
                         </div>
                     </div>
@@ -88,3 +136,4 @@ export default function Settings({ auth }: PageProps) {
         </DashboardLayout>
     );
 }
+

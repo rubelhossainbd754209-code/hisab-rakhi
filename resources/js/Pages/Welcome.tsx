@@ -59,7 +59,7 @@ export default function Welcome() {
                                     <span className="text-white text-xl font-bold">হি</span>
                                 </div>
                                 <span className="text-xl font-bold text-gray-900 dark:text-white">
-                                    হিসাব করি
+                                    হিসাব রাখি
                                 </span>
                             </Link>
 
@@ -71,7 +71,7 @@ export default function Welcome() {
                                 <a href="#business-types" className="text-gray-600 hover:text-primary-500 dark:text-gray-300 transition-colors">
                                     ব্যবসার ধরন
                                 </a>
-                                <a href="#pricing" className="text-gray-600 hover:text-primary-500 dark:text-gray-300 transition-colors">
+                                <a href="pricing" className="text-gray-600 hover:text-primary-500 dark:text-gray-300 transition-colors">
                                     মূল্য
                                 </a>
                             </nav>
@@ -156,7 +156,7 @@ export default function Welcome() {
                                 আপনার ব্যবসার জন্য সব কিছু
                             </h2>
                             <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-                                হিসাব করি অ্যাপে আছে আপনার ব্যবসা পরিচালনার জন্য প্রয়োজনীয় সকল টুলস
+                                হিসাব রাখি অ্যাপে আছে আপনার ব্যবসা পরিচালনার জন্য প্রয়োজনীয় সকল টুলস
                             </p>
                         </div>
 
@@ -230,7 +230,7 @@ export default function Welcome() {
                             আজই শুরু করুন - সম্পূর্ণ ফ্রি!
                         </h2>
                         <p className="text-xl text-primary-100 mb-8">
-                            হাজারো ব্যবসায়ী ইতিমধ্যে হিসাব করি ব্যবহার করছেন
+                            হাজারো ব্যবসায়ী ইতিমধ্যে হিসাব রাখি ব্যবহার করছেন
                         </p>
                         <Link
                             href="/register"
@@ -249,10 +249,10 @@ export default function Welcome() {
                                 <div className="w-10 h-10 bg-primary-500 rounded-xl flex items-center justify-center">
                                     <span className="text-white text-xl font-bold">হি</span>
                                 </div>
-                                <span className="text-lg font-bold text-white">হিসাব করি</span>
+                                <span className="text-lg font-bold text-white">হিসাব রাখি</span>
                             </div>
                             <p className="text-sm">
-                                © {new Date().getFullYear()} হিসাব করি। সর্বস্বত্ব সংরক্ষিত।
+                                © {new Date().getFullYear()} হিসাব রাখি। সর্বস্বত্ব সংরক্ষিত।
                             </p>
                             <div className="flex items-center gap-6">
                                 <a href="#" className="hover:text-white transition-colors">গোপনীয়তা নীতি</a>

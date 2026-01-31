@@ -9,9 +9,10 @@ interface AdminLayoutProps {
 
 // Admin navigation items
 const adminNavItems = [
-    { name: 'ড্যাশবোর্ড', href: '/admin', icon: '🏠' },
+    { name: 'ড্যাশবোর্ড', href: '/admin', icon: '🏠', exactMatch: true },
     { name: 'ব্যবহারকারী', href: '/admin/users', icon: '👥' },
-    { name: 'ব্যবসা সমূহ', href: '/admin/businesses', icon: '🏪' },
+    { name: 'ব্যবসা সমূহ', href: '/admin/subscriptions', icon: '🏪', exactMatch: true },
+    { name: 'সাবস্ক্রিপশন প্ল্যান', href: '/admin/subscriptions/plans', icon: '💳' },
     { name: 'ক্যাটাগরি', href: '/admin/categories', icon: '📁' },
     { name: 'টেমপ্লেট', href: '/admin/templates', icon: '🎨' },
     { name: 'Cloudinary', href: '/admin/cloudinary', icon: '☁️' },
@@ -53,7 +54,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
                                 <span className="text-white text-sm font-bold">এ</span>
                             </div>
                             <div>
-                                <span className="text-white font-semibold block leading-none">হিসাব করি</span>
+                                <span className="text-white font-semibold block leading-none">হিসাব রাখি</span>
                                 <span className="text-red-400 text-xs">সুপার অ্যাডমিন</span>
                             </div>
                         </Link>
@@ -68,22 +69,39 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
                     {/* Navigation */}
                     <nav className="p-3 space-y-1">
                         {adminNavItems.map((item) => {
-                            const isActive = currentPath === item.href ||
-                                (item.href !== '/admin' && currentPath.startsWith(item.href));
+                            // Use exactMatch property to determine matching behavior
+                            const isActive = item.exactMatch
+                                ? currentPath === item.href
+                                : (currentPath === item.href || currentPath.startsWith(item.href + '/'));
+
+                            const isUsers = item.href === '/admin/users';
+                            const pendingCount = auth.pending_users_count || 0;
+
                             return (
                                 <Link
                                     key={item.href}
                                     href={item.href}
                                     className={`
-                                        flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm
+                                        flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors text-sm
                                         ${isActive
                                             ? 'bg-red-500 text-white'
                                             : 'text-gray-400 hover:bg-gray-800 hover:text-white'
                                         }
                                     `}
                                 >
-                                    <span className="text-lg">{item.icon}</span>
-                                    <span>{item.name}</span>
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-lg">{item.icon}</span>
+                                        <span>{item.name}</span>
+                                    </div>
+
+                                    {isUsers && pendingCount > 0 && (
+                                        <span className={`
+                                            px-2 py-0.5 rounded-full text-[10px] font-bold
+                                            ${isActive ? 'bg-white text-red-500' : 'bg-red-500 text-white'}
+                                        `}>
+                                            {pendingCount}
+                                        </span>
+                                    )}
                                 </Link>
                             );
                         })}
@@ -126,7 +144,11 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                                     </svg>
-                                    <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                                    {(auth.pending_users_count ?? 0) > 0 && (
+                                        <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center bg-red-500 rounded-full text-[10px] text-white font-bold ring-2 ring-gray-900">
+                                            {auth.pending_users_count}
+                                        </span>
+                                    )}
                                 </button>
 
                                 {/* Profile Dropdown */}

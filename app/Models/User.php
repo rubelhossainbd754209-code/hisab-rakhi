@@ -87,4 +87,12 @@ class User extends Authenticatable
     {
         return $this->belongsTo(User::class, 'approved_by');
     }
+
+    /**
+     * Get the business associated with the user.
+     */
+    public function business()
+    {
+        return $this->hasOne(Business::class);
+    }
 }

@@ -29,6 +29,12 @@ export interface Business {
     updated_at: string;
     category?: Category;
     template?: Template;
+    // Subscription status (computed from backend)
+    subscription_status?: 'no_subscription' | 'trial' | 'premium' | 'expired' | 'grace';
+    is_trial?: boolean;
+    is_premium?: boolean;
+    days_remaining?: number;
+    plan_name?: string;
 }
 
 export interface BusinessSettings {
@@ -62,6 +68,7 @@ export interface Template {
     name_en?: string;
     description?: string;
     modules: TemplateModule[];
+    config?: any;
     settings: TemplateSettings;
     preview_image?: string;
     is_active: boolean;
@@ -213,6 +220,7 @@ export interface PageProps {
     auth: {
         user: User;
         business?: Business;
+        pending_users_count?: number;
     };
     flash?: {
         success?: string;

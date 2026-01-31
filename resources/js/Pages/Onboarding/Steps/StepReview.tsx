@@ -121,7 +121,7 @@ export default function StepReview({
                         নির্বাচিত মডিউল ({data.selected_modules.length}টি)
                     </p>
                     <div className="flex flex-wrap gap-2">
-                        {selectedTemplate.modules
+                        {(selectedTemplate.modules || [])
                             .filter((m) => data.selected_modules.includes(m.id))
                             .map((module) => (
                                 <span

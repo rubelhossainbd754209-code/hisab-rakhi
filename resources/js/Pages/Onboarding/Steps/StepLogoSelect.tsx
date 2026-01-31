@@ -42,7 +42,7 @@ export default function StepLogoSelect({
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [selectedIconId, setSelectedIconId] = useState<string | null>(null);
 
-    const displayLogos = logoLibrary.length > 0 ? logoLibrary : defaultLogos;
+    const displayLogos = (logoLibrary && logoLibrary.length > 0) ? logoLibrary : defaultLogos;
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];

@@ -8,9 +8,19 @@ use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use App\Http\Middleware\EnsureUserIsApproved;
 use App\Http\Middleware\EnsureUserIsAdmin;
+use App\Http\Middleware\EnsureOnboardingIsComplete;
 use App\Http\Controllers\CloudinaryAccountController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AdminDashboardController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\TemplateController;
+use App\Http\Controllers\SubscriptionController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\ProductReturnController;
+use App\Http\Controllers\BusinessSettingsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -23,11 +33,18 @@ Route::get('/', function () {
     return Inertia::render('Welcome');
 })->name('home');
 
+// Public Pricing Page
+Route::get('/pricing', [SubscriptionController::class, 'pricing'])->name('pricing');
+
 // Authentication Routes (Guest only)
 Route::middleware('guest')->group(function () {
     // Login
     Route::get('/login', function () {
-        return Inertia::render('Auth/Login');
+        $stats = [
+            'total_businesses' => \App\Models\Business::count(),
+            'total_transactions' => \App\Models\Transaction::count(),
+        ];
+        return Inertia::render('Auth/Login', ['stats' => $stats]);
     })->name('login');
 
     Route::post('/login', function (Request $request) {
@@ -56,7 +73,11 @@ Route::middleware('guest')->group(function () {
 
     // Register
     Route::get('/register', function () {
-        return Inertia::render('Auth/Register');
+        $stats = [
+            'total_businesses' => \App\Models\Business::count(),
+            'total_transactions' => \App\Models\Transaction::count(),
+        ];
+        return Inertia::render('Auth/Register', ['stats' => $stats]);
     })->name('register');
 
     Route::post('/register', function (Request $request) {
@@ -104,58 +125,115 @@ Route::post('/logout', function (Request $request) {
     return redirect('/');
 })->middleware('auth')->name('logout');
 
-// Protected Routes (require authentication AND approval)
+// Onboarding (Require auth & approval but NOT completion yet)
 Route::middleware(['auth', EnsureUserIsApproved::class])->group(function () {
-    // Dashboard
-    Route::get('/dashboard', function () {
-        return Inertia::render('Dashboard/Index');
-    })->name('dashboard');
-
-    // Onboarding
     Route::get('/onboarding', function () {
+        $moduleMap = [
+            'transactions' => ['name_bn' => 'দৈনিক হিসাব', 'icon' => '📅', 'is_default' => true, 'is_required' => true],
+            'parties' => ['name_bn' => 'পার্টি হিসাব', 'icon' => '👥', 'is_default' => true, 'is_required' => true],
+            'inventory' => ['name_bn' => 'পণ্য মজুদ', 'icon' => '📦', 'is_default' => true, 'is_required' => false],
+            'billing' => ['name_bn' => 'বিল তৈরি', 'icon' => '🧾', 'is_default' => true, 'is_required' => false],
+            'reports' => ['name_bn' => 'রিপোর্ট', 'icon' => '📊', 'is_default' => true, 'is_required' => false],
+            'barcode' => ['name_bn' => 'বারকোড স্ক্যান', 'icon' => '📱', 'is_default' => true, 'is_required' => false],
+            'sms' => ['name_bn' => 'SMS রিমাইন্ডার', 'icon' => '📲', 'is_default' => false, 'is_required' => false],
+        ];
+
         return Inertia::render('Onboarding/Index', [
-            'categories' => [],
-            'templates' => [],
+            'categories' => \App\Models\BusinessCategory::active()->ordered()->get(),
+            'templates' => \App\Models\BusinessTemplate::active()->get()->map(function ($template) use ($moduleMap) {
+                $templateModules = [];
+                $rawModules = $template->config['modules'] ?? [];
+                
+                foreach ($rawModules as $index => $modKey) {
+                    if (isset($moduleMap[$modKey])) {
+                        $templateModules[] = array_merge(['id' => $modKey, 'sort_order' => $index + 1], $moduleMap[$modKey]);
+                    } else {
+                        // Fallback for unknown modules
+                        $templateModules[] = [
+                            'id' => $modKey,
+                            'name_bn' => ucfirst($modKey),
+                            'icon' => '🧩',
+                            'is_default' => true,
+                            'is_required' => false,
+                            'sort_order' => $index + 1
+                        ];
+                    }
+                }
+
+                return [
+                    'id' => $template->id,
+                    'category_id' => $template->category_id,
+                    'name_bn' => $template->name,
+                    'description' => $template->description,
+                    'modules' => $templateModules,
+                    'settings' => $template->config['settings'] ?? [],
+                    'thumbnail' => $template->thumbnail,
+                ];
+            }),
             'logoLibrary' => [],
         ]);
     })->name('onboarding');
 
     Route::post('/onboarding/complete', function (Request $request) {
+        $validated = $request->validate([
+            'business_name' => 'required|string|max:255',
+            'business_phone' => 'required|string',
+            'business_address' => 'nullable|string',
+            'category_id' => 'required',
+            'template_id' => 'required',
+            'selected_modules' => 'nullable|array',
+            'logo' => 'nullable',
+        ]);
+
+        $logoPath = null;
+        if ($request->hasFile('logo')) {
+            $logoPath = $request->file('logo')->store('logos', 'public');
+        } elseif (is_string($validated['logo'])) {
+            $logoPath = $validated['logo']; // Emoji or string path
+        }
+
+        $business = \App\Models\Business::create([
+            'user_id' => auth()->id(),
+            'name' => $validated['business_name'],
+            'phone' => $validated['business_phone'],
+            'address' => $validated['business_address'],
+            'slug' => \App\Models\Business::generateSlug($validated['business_name']),
+            'template_id' => $validated['template_id'],
+            'onboarding_completed_at' => now(),
+            'is_active' => true,
+            'settings' => [
+                'modules' => $validated['selected_modules'] ?? [],
+            ],
+            'logo' => $logoPath,
+        ]);
+
         return redirect('/dashboard');
     })->name('onboarding.complete');
+});
+
+// Protected Routes (require authentication AND approval AND onboarding completion)
+Route::middleware(['auth', EnsureUserIsApproved::class, EnsureOnboardingIsComplete::class])->group(function () {
+    // Dashboard
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Transactions
     Route::prefix('transactions')->name('transactions.')->group(function () {
-        Route::get('/', function () {
-            return Inertia::render('Transactions/Index');
-        })->name('index');
-        
-        Route::post('/', function (Request $request) {
-            // TODO: Save transaction
-            return back()->with('success', 'লেনদেন সফলভাবে সেভ হয়েছে।');
-        })->name('store');
+        Route::get('/', [TransactionController::class, 'index'])->name('index');
+        Route::post('/', [TransactionController::class, 'store'])->name('store');
     });
 
-    // Parties
-    Route::prefix('parties')->name('parties.')->group(function () {
-        Route::get('/', function () {
-            return Inertia::render('Parties/Index');
-        })->name('index');
-    });
+    // Parties (Customers & Suppliers)
+    Route::resource('parties', \App\Http\Controllers\PartyController::class);
 
     // Products
-    Route::prefix('products')->name('products.')->group(function () {
-        Route::get('/', function () {
-            return Inertia::render('Products/Index');
-        })->name('index');
-    });
+    Route::resource('products', ProductController::class);
 
     // Invoices
-    Route::prefix('invoices')->name('invoices.')->group(function () {
-        Route::get('/', function () {
-            return Inertia::render('Invoices/Index');
-        })->name('index');
-    });
+    Route::resource('invoices', InvoiceController::class);
+
+    // Returns
+    Route::get('/returns/search', [ProductReturnController::class, 'search'])->name('returns.search');
+    Route::resource('returns', ProductReturnController::class);
 
     // Reports
     Route::prefix('reports')->name('reports.')->group(function () {
@@ -165,9 +243,16 @@ Route::middleware(['auth', EnsureUserIsApproved::class])->group(function () {
     });
 
     // Settings
-    Route::get('/settings', function () {
-        return Inertia::render('Settings/Index');
-    })->name('settings');
+    Route::prefix('settings')->name('settings.')->group(function () {
+        Route::get('/', function () {
+            return Inertia::render('Settings/Index');
+        })->name('index');
+        
+        // Business Settings (Premium Feature)
+        Route::get('/business', [BusinessSettingsController::class, 'index'])->name('business');
+        Route::put('/business', [BusinessSettingsController::class, 'update'])->name('business.update');
+        Route::delete('/business/logo', [BusinessSettingsController::class, 'removeLogo'])->name('business.logo.remove');
+    });
 
     // Profile
     Route::prefix('profile')->name('profile.')->group(function () {
@@ -231,15 +316,23 @@ Route::middleware(['auth', EnsureUserIsAdmin::class])->prefix('admin')->name('ad
         })->name('toggle-active');
     });
 
-    // Categories
-    Route::get('/categories', function () {
-        return Inertia::render('Admin/Categories/Index');
-    })->name('categories.index');
+    // Categories Management
+    Route::prefix('categories')->name('categories.')->group(function () {
+        Route::get('/', [CategoryController::class, 'index'])->name('index');
+        Route::post('/', [CategoryController::class, 'store'])->name('store');
+        Route::put('/{category}', [CategoryController::class, 'update'])->name('update');
+        Route::delete('/{category}', [CategoryController::class, 'destroy'])->name('destroy');
+        Route::post('/{category}/toggle-active', [CategoryController::class, 'toggleActive'])->name('toggle-active');
+        Route::post('/update-order', [CategoryController::class, 'updateOrder'])->name('update-order');
+    });
 
-    // Templates
-    Route::get('/templates', function () {
-        return Inertia::render('Admin/Templates/Index');
-    })->name('templates.index');
+    // Templates Management
+    Route::prefix('templates')->name('templates.')->group(function () {
+        Route::get('/', [TemplateController::class, 'index'])->name('index');
+        Route::get('/{template}', [TemplateController::class, 'show'])->name('show');
+        Route::put('/{template}', [TemplateController::class, 'update'])->name('update');
+        Route::post('/{template}/config', [TemplateController::class, 'updateConfig'])->name('update-config');
+    });
 
     // Businesses
     Route::get('/businesses', function () {
@@ -259,5 +352,19 @@ Route::middleware(['auth', EnsureUserIsAdmin::class])->prefix('admin')->name('ad
         Route::delete('/{cloudinary}', [CloudinaryAccountController::class, 'destroy'])->name('destroy');
         Route::post('/{cloudinary}/activate', [CloudinaryAccountController::class, 'activate'])->name('activate');
         Route::post('/test-connection', [CloudinaryAccountController::class, 'testConnection'])->name('test');
+    });
+
+    // Subscription Management
+    Route::prefix('subscriptions')->name('subscriptions.')->group(function () {
+        Route::get('/', [SubscriptionController::class, 'adminSubscriptions'])->name('index');
+        Route::get('/plans', [SubscriptionController::class, 'adminPlans'])->name('plans');
+        Route::put('/plans/{plan}', [SubscriptionController::class, 'adminUpdatePlan'])->name('plans.update');
+        Route::post('/settings', [SubscriptionController::class, 'adminUpdateSettings'])->name('settings.update');
+        
+        // Business subscription management
+        Route::post('/business/{business}/extend', [SubscriptionController::class, 'adminExtendSubscription'])->name('business.extend');
+        Route::post('/business/{business}/unlimited', [SubscriptionController::class, 'adminSetUnlimited'])->name('business.unlimited');
+        Route::post('/business/{business}/revoke', [SubscriptionController::class, 'adminRevokeSubscription'])->name('business.revoke');
+        Route::post('/business/{business}/assign', [SubscriptionController::class, 'adminAssignPlan'])->name('business.assign');
     });
 });

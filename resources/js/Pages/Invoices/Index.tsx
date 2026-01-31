@@ -10,25 +10,22 @@ interface InvoicesProps extends PageProps {
 export default function Invoices({ auth, invoices = [] }: InvoicesProps) {
     const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'paid'>('all');
 
-    // Demo invoices
-    const demoInvoices: Invoice[] = invoices.length > 0 ? invoices : [
-        { id: '1', business_id: '1', invoice_number: 'INV-001', party: { id: '1', business_id: '1', name: 'করিম সাহেব', type: 'customer', balance: 5000, is_active: true, created_at: '', updated_at: '' }, total_amount: 5500, paid_amount: 3000, due_amount: 2500, status: 'partial', invoice_date: '2026-01-15', items: [], created_at: '', updated_at: '' },
-        { id: '2', business_id: '1', invoice_number: 'INV-002', party: { id: '2', business_id: '1', name: 'রহিম আলী', type: 'customer', balance: 0, is_active: true, created_at: '', updated_at: '' }, total_amount: 3200, paid_amount: 3200, due_amount: 0, status: 'paid', invoice_date: '2026-01-14', items: [], created_at: '', updated_at: '' },
-        { id: '3', business_id: '1', invoice_number: 'INV-003', party: { id: '3', business_id: '1', name: 'সালমা বেগম', type: 'customer', balance: 2800, is_active: true, created_at: '', updated_at: '' }, total_amount: 2800, paid_amount: 0, due_amount: 2800, status: 'pending', invoice_date: '2026-01-14', items: [], created_at: '', updated_at: '' },
-        { id: '4', business_id: '1', invoice_number: 'INV-004', party: { id: '4', business_id: '1', name: 'জামাল উদ্দিন', type: 'customer', balance: 0, is_active: true, created_at: '', updated_at: '' }, total_amount: 8500, paid_amount: 8500, due_amount: 0, status: 'paid', invoice_date: '2026-01-13', items: [], created_at: '', updated_at: '' },
-    ];
+    // Use real invoices or empty array
+    const invoicesList = 'data' in invoices ? (invoices as any).data : invoices;
 
-    const formatTaka = (amount: number) => '৳ ' + amount.toLocaleString('bn-BD');
+    const formatTaka = (amount: number) => '৳ ' + Number(amount || 0).toLocaleString('bn-BD');
 
-    const filteredInvoices = demoInvoices.filter(inv => {
-        if (activeTab === 'pending') return inv.status === 'pending' || inv.status === 'partial';
+    const filteredInvoices = invoicesList.filter((inv: Invoice) => {
+        if (activeTab === 'pending') return inv.status === 'unpaid' || inv.status === 'partial';
         if (activeTab === 'paid') return inv.status === 'paid';
         return true;
     });
 
-    const totalAmount = demoInvoices.reduce((sum, inv) => sum + inv.total_amount, 0);
-    const totalPaid = demoInvoices.reduce((sum, inv) => sum + inv.paid_amount, 0);
-    const totalDue = demoInvoices.reduce((sum, inv) => sum + inv.due_amount, 0);
+    const totalAmount = invoicesList.reduce((sum: number, inv: Invoice) => sum + Number(inv.total_amount || 0), 0);
+    const totalPaid = invoicesList.reduce((sum: number, inv: Invoice) => sum + Number(inv.paid_amount || 0), 0);
+    const totalDue = invoicesList.reduce((sum: number, inv: Invoice) => sum + Number(inv.due_amount || 0), 0);
+
+
 
     return (
         <DashboardLayout title="বিল/চালান">
@@ -75,8 +72,8 @@ export default function Invoices({ auth, invoices = [] }: InvoicesProps) {
                         key={tab.key}
                         onClick={() => setActiveTab(tab.key as any)}
                         className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === tab.key
-                                ? 'text-white'
-                                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                            ? 'text-white'
+                            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                             }`}
                         style={activeTab === tab.key ? { backgroundColor: '#006A4E' } : {}}
                     >
@@ -88,37 +85,46 @@ export default function Invoices({ auth, invoices = [] }: InvoicesProps) {
             {/* Invoices List */}
             <div className="bg-gray-800 rounded-2xl border border-gray-700">
                 <div className="divide-y divide-gray-700">
-                    {filteredInvoices.map(invoice => (
-                        <Link
+                    {filteredInvoices.map((invoice: any) => (
+                        <div
                             key={invoice.id}
-                            href={`/invoices/${invoice.id}`}
-                            className="block p-4 hover:bg-gray-700/50 transition-colors"
+                            className="flex items-center justify-between p-4 hover:bg-gray-700/50 transition-colors"
                         >
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-4">
-                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-lg ${invoice.status === 'paid' ? 'bg-green-500/20' :
-                                            invoice.status === 'partial' ? 'bg-yellow-500/20' : 'bg-red-500/20'
-                                        }`}>
-                                        🧾
-                                    </div>
-                                    <div>
-                                        <p className="font-medium text-white">{invoice.invoice_number}</p>
-                                        <p className="text-sm text-gray-400">
-                                            {invoice.party?.name} • {new Date(invoice.invoice_date).toLocaleDateString('bn-BD')}
-                                        </p>
-                                    </div>
+                            <Link
+                                href={`/invoices/${invoice.id}`}
+                                className="flex items-center gap-4 flex-1"
+                            >
+                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-lg ${invoice.status === 'paid' ? 'bg-green-500/20' :
+                                    invoice.status === 'partial' ? 'bg-yellow-500/20' : 'bg-red-500/20'
+                                    }`}>
+                                    🧾
                                 </div>
+                                <div>
+                                    <p className="font-medium text-white">{invoice.invoice_number}</p>
+                                    <p className="text-sm text-gray-400">
+                                        {invoice.party?.name || 'সাধারণ কাস্টমার'} • {new Date(invoice.date).toLocaleDateString('bn-BD')}
+                                    </p>
+                                </div>
+                            </Link>
+                            <div className="flex items-center gap-4">
                                 <div className="text-right">
                                     <p className="font-bold text-white">{formatTaka(invoice.total_amount)}</p>
                                     <span className={`text-xs px-2 py-0.5 rounded-full ${invoice.status === 'paid' ? 'bg-green-500/20 text-green-400' :
-                                            invoice.status === 'partial' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'
+                                        invoice.status === 'partial' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'
                                         }`}>
                                         {invoice.status === 'paid' ? 'পরিশোধিত' :
                                             invoice.status === 'partial' ? `বাকি ${formatTaka(invoice.due_amount)}` : 'বাকি'}
                                     </span>
                                 </div>
+                                <Link
+                                    href={`/invoices/${invoice.id}`}
+                                    className="p-2 rounded-lg bg-teal-600/20 text-teal-400 hover:bg-teal-600/40 transition-colors"
+                                    title="বিস্তারিত দেখুন / প্রিন্ট"
+                                >
+                                    🖨️
+                                </Link>
                             </div>
-                        </Link>
+                        </div>
                     ))}
                 </div>
             </div>

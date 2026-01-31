@@ -5,12 +5,14 @@ import type { PageProps, DashboardStats, Transaction } from '@/types';
 import QuickActionsCustomizer from '@/Components/Dashboard/QuickActionsCustomizer';
 
 interface DashboardProps extends PageProps {
-    stats?: DashboardStats;
+    stats: DashboardStats;
+    business: any;
+    template: any;
 }
 
 // Default quick actions
 const defaultQuickActions = [
-    { id: 'new_sale', name: 'নতুন বিক্রি', icon: '🛒', href: '/sales/create', color: 'bg-green-500', isVisible: true, order: 0 },
+    { id: 'new_sale', name: 'নতুন বিক্রি', icon: '🛒', href: '/invoices/create', color: 'bg-green-500', isVisible: true, order: 0 },
     { id: 'collect_due', name: 'বাকি আদায়', icon: '💰', href: '/payments/in', color: 'bg-blue-500', isVisible: true, order: 1 },
     { id: 'add_expense', name: 'খরচ যোগ', icon: '📝', href: '/expenses/create', color: 'bg-red-500', isVisible: true, order: 2 },
     { id: 'new_product', name: 'নতুন পণ্য', icon: '📦', href: '/products/create', color: 'bg-purple-500', isVisible: true, order: 3 },
@@ -43,14 +45,78 @@ const formatDate = (date: string): string => {
     });
 };
 
-export default function Dashboard({ auth, stats }: DashboardProps) {
-    const [isQuickActionsCustomizerOpen, setIsQuickActionsCustomizerOpen] = useState(false);
+// Theme Configuration Mapping
+const templateThemes: Record<string, any> = {
+    'pharmacy-default': {
+        primary: '#006A4E',
+        accent: '#D1FAE5',
+        incomeLabel: 'আজকের বিক্রি',
+        expenseLabel: 'আজকের খরচ',
+        receivableLabel: 'বাকি পাওনা',
+        payableLabel: 'বাকি দেনা',
+        actionLabel: 'নতুন প্রেসক্রিপশন',
+        actionIcon: '💊',
+        statsIcons: ['💊', '💸', '📥', '📤']
+    },
+    'grocery-default': {
+        primary: '#006A4E',
+        accent: '#10B981',
+        incomeLabel: 'আজকের বিক্রি',
+        expenseLabel: 'আজকের খরচ',
+        receivableLabel: 'মোট পাওনা',
+        payableLabel: 'মোট দেনা',
+        actionLabel: 'নতুন বিক্রি',
+        actionIcon: '🛒',
+        statsIcons: ['💵', '💸', '📥', '📤']
+    },
+    'electrician-default': {
+        primary: '#2563EB',
+        accent: '#DBEAFE',
+        incomeLabel: 'সার্ভিস ফি',
+        expenseLabel: 'পার্টস খরচ',
+        receivableLabel: 'পাওনা বিল',
+        payableLabel: 'দেনা',
+        actionLabel: 'নতুন কাজ',
+        actionIcon: '🔨',
+        statsIcons: ['⚡', '🔧', '📋', '💳']
+    },
+    'service-default': {
+        primary: '#7C3AED',
+        accent: '#F5F3FF',
+        incomeLabel: 'মোট আয়',
+        expenseLabel: 'পরিচালনা খরচ',
+        receivableLabel: 'বাকি পাওনা',
+        payableLabel: 'মোট দেনা',
+        actionLabel: 'নতুন বুকিং',
+        actionIcon: '📅',
+        statsIcons: ['💰', '📉', '👥', '🔄']
+    }
+};
 
-    // Load quick actions from localStorage or defaults
+const getTheme = (slug: string) => {
+    return templateThemes[slug] || templateThemes['grocery-default'];
+};
+
+export default function Dashboard({ auth, stats, business, template }: DashboardProps) {
+    const [isQuickActionsCustomizerOpen, setIsQuickActionsCustomizerOpen] = useState(false);
+    const theme = getTheme(template?.slug || 'grocery-default');
+
+    // Load quick actions ...
     const [quickActions, setQuickActions] = useState<QuickAction[]>(() => {
         const saved = typeof window !== 'undefined' ? localStorage.getItem('hisab_quick_actions') : null;
-        return saved ? JSON.parse(saved) : defaultQuickActions;
+        if (saved) return JSON.parse(saved);
+
+        // Adjust default names based on template
+        return defaultQuickActions.map(a => {
+            if (a.id === 'new_sale' && template?.slug?.includes('pharmacy')) {
+                return { ...a, customName: 'নতুন বিক্রি (ঔষধ)' };
+            }
+            return a;
+        });
     });
+
+    const dashboardStats = stats;
+    const recentTransactions = stats.recent_transactions;
 
     // Handle quick actions save
     const handleQuickActionsSave = (actions: QuickAction[]) => {
@@ -65,27 +131,6 @@ export default function Dashboard({ auth, stats }: DashboardProps) {
         .filter(a => a.isVisible)
         .sort((a, b) => a.order - b.order)
         .slice(0, 4);
-
-    // Default stats for demo
-    const dashboardStats: DashboardStats = stats || {
-        today_income: 15000,
-        today_expense: 8500,
-        today_profit: 6500,
-        total_receivable: 45000,
-        total_payable: 12000,
-        low_stock_count: 5,
-        pending_invoices: 3,
-        recent_transactions: [],
-    };
-
-    const recentTransactions: Transaction[] = dashboardStats.recent_transactions.length > 0
-        ? dashboardStats.recent_transactions
-        : [
-            { id: '1', business_id: '1', type: 'sale', amount: 2500, description: 'নগদ বিক্রি', transaction_date: '2026-01-15', created_at: '', updated_at: '' },
-            { id: '2', business_id: '1', type: 'expense', amount: 500, description: 'বিদ্যুৎ বিল', transaction_date: '2026-01-15', created_at: '', updated_at: '' },
-            { id: '3', business_id: '1', type: 'payment_in', amount: 3000, description: 'রহিম সাহেব - বাকি', transaction_date: '2026-01-15', party: { id: '1', business_id: '1', name: 'রহিম সাহেব', type: 'customer', balance: 5000, is_active: true, created_at: '', updated_at: '' }, created_at: '', updated_at: '' },
-            { id: '4', business_id: '1', type: 'purchase', amount: 8000, description: 'মাল কেনা - পাইকারি', transaction_date: '2026-01-14', created_at: '', updated_at: '' },
-        ];
 
     return (
         <DashboardLayout title="ড্যাশবোর্ড">
@@ -112,22 +157,21 @@ export default function Dashboard({ auth, stats }: DashboardProps) {
                 <div className="bg-gray-800 rounded-2xl p-5 border border-gray-700">
                     <div className="flex items-center gap-4">
                         <div className="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center text-2xl">
-                            💵
+                            {theme.statsIcons[0]}
                         </div>
                         <div>
-                            <p className="text-sm text-gray-400">আজকের আয়</p>
+                            <p className="text-sm text-gray-400">{theme.incomeLabel}</p>
                             <p className="text-xl font-bold text-white">{formatTaka(dashboardStats.today_income)}</p>
-                            <p className="text-xs text-green-400">↑ 12%</p>
                         </div>
                     </div>
                 </div>
                 <div className="bg-gray-800 rounded-2xl p-5 border border-gray-700">
                     <div className="flex items-center gap-4">
                         <div className="w-12 h-12 bg-red-500/20 rounded-xl flex items-center justify-center text-2xl">
-                            💸
+                            {theme.statsIcons[1]}
                         </div>
                         <div>
-                            <p className="text-sm text-gray-400">আজকের খরচ</p>
+                            <p className="text-sm text-gray-400">{theme.expenseLabel}</p>
                             <p className="text-xl font-bold text-white">{formatTaka(dashboardStats.today_expense)}</p>
                         </div>
                     </div>
@@ -135,10 +179,10 @@ export default function Dashboard({ auth, stats }: DashboardProps) {
                 <div className="bg-gray-800 rounded-2xl p-5 border border-gray-700">
                     <div className="flex items-center gap-4">
                         <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center text-2xl">
-                            📥
+                            {theme.statsIcons[2]}
                         </div>
                         <div>
-                            <p className="text-sm text-gray-400">মোট পাওনা</p>
+                            <p className="text-sm text-gray-400">{theme.receivableLabel}</p>
                             <p className="text-xl font-bold text-white">{formatTaka(dashboardStats.total_receivable)}</p>
                         </div>
                     </div>
@@ -146,10 +190,10 @@ export default function Dashboard({ auth, stats }: DashboardProps) {
                 <div className="bg-gray-800 rounded-2xl p-5 border border-gray-700">
                     <div className="flex items-center gap-4">
                         <div className="w-12 h-12 bg-orange-500/20 rounded-xl flex items-center justify-center text-2xl">
-                            📤
+                            {theme.statsIcons[3]}
                         </div>
                         <div>
-                            <p className="text-sm text-gray-400">মোট দেনা</p>
+                            <p className="text-sm text-gray-400">{theme.payableLabel}</p>
                             <p className="text-xl font-bold text-white">{formatTaka(dashboardStats.total_payable)}</p>
                         </div>
                     </div>
@@ -199,46 +243,52 @@ export default function Dashboard({ auth, stats }: DashboardProps) {
                             </Link>
                         </div>
                         <div className="p-4 space-y-3">
-                            {recentTransactions.map((transaction) => (
-                                <div
-                                    key={transaction.id}
-                                    className="flex items-center justify-between p-4 bg-gray-700/50 rounded-xl hover:bg-gray-700 transition-colors"
-                                >
-                                    <div className="flex items-center gap-4">
-                                        <div
-                                            className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg ${transaction.type === 'sale' || transaction.type === 'payment_in' || transaction.type === 'income'
+                            {recentTransactions.length > 0 ? (
+                                recentTransactions.map((transaction) => (
+                                    <div
+                                        key={transaction.id}
+                                        className="flex items-center justify-between p-4 bg-gray-700/50 rounded-xl hover:bg-gray-700 transition-colors"
+                                    >
+                                        <div className="flex items-center gap-4">
+                                            <div
+                                                className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg ${transaction.type === 'sale' || transaction.type === 'payment_in' || transaction.type === 'income'
                                                     ? 'bg-green-500/20'
                                                     : 'bg-red-500/20'
-                                                }`}
-                                        >
-                                            {transaction.type === 'sale' ? '🛒' :
-                                                transaction.type === 'payment_in' ? '💰' :
-                                                    transaction.type === 'expense' ? '📝' :
-                                                        transaction.type === 'purchase' ? '📦' : '💵'}
+                                                    }`}
+                                            >
+                                                {transaction.type === 'sale' ? theme.statsIcons[0] :
+                                                    transaction.type === 'payment_in' ? '💰' :
+                                                        transaction.type === 'expense' ? '📝' :
+                                                            transaction.type === 'purchase' ? '📦' : '💵'}
+                                            </div>
+                                            <div>
+                                                <p className="font-medium text-white">
+                                                    {transaction.description}
+                                                </p>
+                                                <p className="text-sm text-gray-400">
+                                                    {transaction.party?.name && `${transaction.party.name} • `}
+                                                    {formatDate(transaction.transaction_date)}
+                                                </p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p className="font-medium text-white">
-                                                {transaction.description}
-                                            </p>
-                                            <p className="text-sm text-gray-400">
-                                                {transaction.party?.name && `${transaction.party.name} • `}
-                                                {formatDate(transaction.transaction_date)}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <span
-                                        className={`font-semibold ${transaction.type === 'sale' || transaction.type === 'payment_in' || transaction.type === 'income'
+                                        <span
+                                            className={`font-semibold ${transaction.type === 'sale' || transaction.type === 'payment_in' || transaction.type === 'income'
                                                 ? 'text-green-400'
                                                 : 'text-red-400'
-                                            }`}
-                                    >
-                                        {transaction.type === 'sale' || transaction.type === 'payment_in' || transaction.type === 'income'
-                                            ? '+'
-                                            : '-'}
-                                        {formatTaka(transaction.amount)}
-                                    </span>
+                                                }`}
+                                        >
+                                            {transaction.type === 'sale' || transaction.type === 'payment_in' || transaction.type === 'income'
+                                                ? '+'
+                                                : '-'}
+                                            {formatTaka(transaction.amount)}
+                                        </span>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="py-8 text-center">
+                                    <p className="text-gray-500 text-sm">কোনো লেনদেন পাওয়া যায়নি</p>
                                 </div>
-                            ))}
+                            )}
                         </div>
                     </div>
                 </div>
@@ -284,15 +334,15 @@ export default function Dashboard({ auth, stats }: DashboardProps) {
                     </div>
 
                     {/* Today's Summary */}
-                    <div className="rounded-2xl p-5 text-white" style={{ background: 'linear-gradient(135deg, #006A4E 0%, #004A36 100%)' }}>
-                        <h3 className="text-lg font-semibold mb-4">📊 আজকের সারসংক্ষেপ</h3>
+                    <div className="rounded-2xl p-5 text-white" style={{ background: `linear-gradient(135deg, ${theme.primary} 0%, ${theme.primary}CC 100%)` }}>
+                        <h3 className="text-lg font-semibold mb-4">📊 {theme.incomeLabel} ও ব্যয়ের সারসংক্ষেপ</h3>
                         <div className="space-y-4">
                             <div className="flex justify-between items-center">
-                                <span className="opacity-80">মোট আয়</span>
+                                <span className="opacity-80">{theme.incomeLabel}</span>
                                 <span className="font-bold">{formatTaka(dashboardStats.today_income)}</span>
                             </div>
                             <div className="flex justify-between items-center">
-                                <span className="opacity-80">মোট খরচ</span>
+                                <span className="opacity-80">{theme.expenseLabel}</span>
                                 <span className="font-bold">{formatTaka(dashboardStats.today_expense)}</span>
                             </div>
                             <hr className="border-white/20" />

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Head, Link, usePage, router } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import type { PageProps } from '@/types';
 import MenuCustomizer from '@/Components/Dashboard/MenuCustomizer';
 import AddTransactionModal from '@/Components/Modals/AddTransactionModal';
@@ -13,11 +13,12 @@ interface DashboardLayoutProps {
 const defaultMenuItems = [
     { id: 'dashboard', name: 'ড্যাশবোর্ড', icon: '🏠', href: '/dashboard', isVisible: true, order: 0 },
     { id: 'transactions', name: 'দৈনিক হিসাব', icon: '📅', href: '/transactions', isVisible: true, order: 1 },
-    { id: 'parties', name: 'পার্টি', icon: '👥', href: '/parties', isVisible: true, order: 2 },
+    { id: 'parties', name: 'গ্রাহক', icon: '👥', href: '/parties', isVisible: true, order: 2 },
     { id: 'products', name: 'পণ্য সমূহ', icon: '📦', href: '/products', isVisible: true, order: 3 },
     { id: 'invoices', name: 'বিল/চালান', icon: '🧾', href: '/invoices', isVisible: true, order: 4 },
-    { id: 'reports', name: 'রিপোর্ট', icon: '📊', href: '/reports', isVisible: true, order: 5 },
-    { id: 'settings', name: 'সেটিংস', icon: '⚙️', href: '/settings', isVisible: true, order: 6 },
+    { id: 'returns', name: 'রিটার্ন প্রোডাক্ট', icon: '🔄', href: '/returns', isVisible: true, order: 5 },
+    { id: 'reports', name: 'রিপোর্ট', icon: '📊', href: '/reports', isVisible: true, order: 6 },
+    { id: 'settings', name: 'সেটিংস', icon: '⚙️', href: '/settings', isVisible: true, order: 7 },
 ];
 
 interface MenuItem {
@@ -32,21 +33,32 @@ interface MenuItem {
 
 interface ExtendedPageProps extends PageProps {
     menuConfig?: MenuItem[];
+    [key: string]: any;
 }
 
 export default function DashboardLayout({ children, title }: DashboardLayoutProps) {
-    const { auth, menuConfig } = usePage<ExtendedPageProps>().props;
+    const { auth } = usePage<ExtendedPageProps>().props;
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isMenuCustomizerOpen, setIsMenuCustomizerOpen] = useState(false);
     const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
 
-    // Load menu items from config or localStorage or defaults
+    // Load menu items
     const [menuItems, setMenuItems] = useState<MenuItem[]>(() => {
-        if (menuConfig) return menuConfig;
         const saved = typeof window !== 'undefined' ? localStorage.getItem('hisab_menu_config') : null;
         return saved ? JSON.parse(saved) : defaultMenuItems;
     });
+
+    // Update terminology when business changes
+    useEffect(() => {
+        const template = auth.business?.template;
+        if (template?.config?.terminology) {
+            setMenuItems(prev => prev.map(item => ({
+                ...item,
+                name: template.config.terminology[item.id] || item.name
+            })));
+        }
+    }, [auth.business?.id]);
 
     // Get current path
     const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
@@ -59,11 +71,9 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
     // Handle menu save
     const handleMenuSave = (items: MenuItem[]) => {
         setMenuItems(items);
-        // Save to localStorage for now
         if (typeof window !== 'undefined') {
             localStorage.setItem('hisab_menu_config', JSON.stringify(items));
         }
-        // TODO: Save to backend
     };
 
     return (
@@ -102,15 +112,47 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
                         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
                     `}
                 >
-                    {/* Logo */}
+                    {/* Logo with Trial/Premium Badge */}
                     <div className="h-16 flex items-center justify-between px-6 border-b border-gray-700">
                         <Link href="/dashboard" className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#006A4E' }}>
                                 <span className="text-white text-xl font-bold">হি</span>
                             </div>
-                            <span className="text-lg font-bold text-white">
-                                হিসাব করি
-                            </span>
+                            <div className="flex flex-col">
+                                <span className="text-lg font-bold text-white leading-tight">
+                                    হিসাব রাখি
+                                </span>
+                                {/* Trial/Premium Badge */}
+                                {auth.business && (
+                                    <>
+                                        {auth.business.is_trial && (
+                                            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 w-fit">
+                                                🎁 {auth.business.days_remaining} দিন বাকি
+                                            </span>
+                                        )}
+                                        {auth.business.is_premium && (
+                                            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 w-fit">
+                                                ⭐ {auth.business.plan_name || 'প্রিমিয়াম'}
+                                            </span>
+                                        )}
+                                        {auth.business.subscription_status === 'no_subscription' && (
+                                            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 w-fit">
+                                                ⚠️ কোনো সাবস্ক্রিপশন নেই
+                                            </span>
+                                        )}
+                                        {auth.business.subscription_status === 'expired' && (
+                                            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 w-fit">
+                                                ⛔ সাবস্ক্রিপশন শেষ
+                                            </span>
+                                        )}
+                                        {auth.business.subscription_status === 'grace' && (
+                                            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-400 w-fit">
+                                                ⏳ গ্রেস পিরিয়ড
+                                            </span>
+                                        )}
+                                    </>
+                                )}
+                            </div>
                         </Link>
                         <button
                             onClick={() => setSidebarOpen(false)}
@@ -122,15 +164,23 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
                         </button>
                     </div>
 
-                    {/* Business Info */}
+                    {/* Business Info with Subscription Status */}
                     {auth.business && (
                         <div className="p-4 m-4 bg-gray-700/50 rounded-xl">
                             <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white text-lg" style={{ backgroundColor: '#006A4E' }}>
+                                <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white text-lg overflow-hidden bg-gray-800">
                                     {auth.business.logo ? (
-                                        <img src={auth.business.logo} alt="" className="w-full h-full object-cover rounded-xl" />
+                                        auth.business.logo.length <= 4 ? (
+                                            <span className="text-2xl">{auth.business.logo}</span>
+                                        ) : (
+                                            <img
+                                                src={auth.business.logo.startsWith('http') ? auth.business.logo : `/storage/${auth.business.logo}`}
+                                                alt={auth.business.name}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        )
                                     ) : (
-                                        auth.business.name.charAt(0)
+                                        <span className="text-xl font-bold">{auth.business.name.charAt(0)}</span>
                                     )}
                                 </div>
                                 <div className="flex-1 min-w-0">
@@ -142,6 +192,27 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
                                     </p>
                                 </div>
                             </div>
+                            {/* Subscription Progress Bar for Trial */}
+                            {auth.business.is_trial && (auth.business.days_remaining ?? 0) <= 5 && (
+                                <div className="mt-3 pt-3 border-t border-gray-600">
+                                    <div className="flex justify-between text-xs mb-1">
+                                        <span className="text-amber-400">ট্রায়াল পিরিয়ড</span>
+                                        <span className="text-gray-400">{auth.business.days_remaining} দিন বাকি</span>
+                                    </div>
+                                    <div className="w-full h-1.5 bg-gray-600 rounded-full overflow-hidden">
+                                        <div
+                                            className="h-full bg-gradient-to-r from-amber-500 to-amber-400 rounded-full transition-all"
+                                            style={{ width: `${Math.max(0, ((auth.business.days_remaining ?? 0) / 15) * 100)}%` }}
+                                        />
+                                    </div>
+                                    <Link
+                                        href="/settings?tab=subscription"
+                                        className="mt-2 text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1"
+                                    >
+                                        🚀 প্রিমিয়ামে আপগ্রেড করুন →
+                                    </Link>
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -187,7 +258,7 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
                             style={{ backgroundColor: '#006A4E' }}
                         >
                             <span className="text-lg">➕</span>
-                            <span>নতুন লেনদেন</span>
+                            <span>{auth.business?.template?.config?.terminology?.new_transaction || 'নতুন লেনদেন'}</span>
                         </button>
                     </div>
                 </aside>
@@ -251,10 +322,22 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
                                 <div className="relative">
                                     <button
                                         onClick={() => setIsProfileOpen(!isProfileOpen)}
-                                        className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-gray-700"
+                                        className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-gray-700 transition-colors"
                                     >
-                                        <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-semibold" style={{ backgroundColor: '#006A4E' }}>
-                                            {auth.user?.name?.charAt(0) || 'U'}
+                                        <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-semibold overflow-hidden bg-gray-600">
+                                            {auth.business?.logo ? (
+                                                auth.business.logo.length <= 4 ? (
+                                                    <span>{auth.business.logo}</span>
+                                                ) : (
+                                                    <img
+                                                        src={auth.business.logo.startsWith('http') ? auth.business.logo : `/storage/${auth.business.logo}`}
+                                                        alt="Logo"
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                )
+                                            ) : (
+                                                auth.user?.name?.charAt(0) || 'U'
+                                            )}
                                         </div>
                                         <span className="hidden sm:block text-sm font-medium text-white">
                                             {auth.user?.name}

@@ -64,7 +64,7 @@ export default function StepTemplateSelect({
     const selectedTemplate = displayTemplates.find((t) => t.id === selectedId);
 
     const handleTemplateSelect = (template: Template) => {
-        const defaultModules = template.modules
+        const defaultModules = (template.modules || [])
             .filter((m) => m.is_default || m.is_required)
             .map((m) => m.id);
         setSelectedModules(defaultModules);
@@ -145,7 +145,7 @@ export default function StepTemplateSelect({
 
                         {/* Modules Preview */}
                         <div className="flex flex-wrap gap-2">
-                            {template.modules.slice(0, 5).map((module) => (
+                            {(template.modules || []).slice(0, 5).map((module) => (
                                 <span
                                     key={module.id}
                                     className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-xs"
@@ -154,9 +154,9 @@ export default function StepTemplateSelect({
                                     <span>{module.name_bn}</span>
                                 </span>
                             ))}
-                            {template.modules.length > 5 && (
+                            {(template.modules?.length || 0) > 5 && (
                                 <span className="text-xs text-gray-400 dark:text-gray-500 self-center">
-                                    +{template.modules.length - 5} আরও
+                                    +{(template.modules?.length || 0) - 5} আরও
                                 </span>
                             )}
                         </div>
@@ -174,7 +174,7 @@ export default function StepTemplateSelect({
                         আপনার প্রয়োজনীয় মডিউল সিলেক্ট করুন (ড্র্যাগ করে সাজাতে পারবেন)
                     </p>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                        {selectedTemplate.modules.map((module) => (
+                        {(selectedTemplate.modules || []).map((module) => (
                             <label
                                 key={module.id}
                                 className={`

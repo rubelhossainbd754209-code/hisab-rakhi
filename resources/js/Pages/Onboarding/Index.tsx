@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Head, router } from '@inertiajs/react';
-import type { Category, Template, OnboardingData } from '@/types';
+import { Head, router, usePage } from '@inertiajs/react';
+import type { Category, Template, OnboardingData, PageProps } from '@/types';
 import { Button } from '@/Components/Common';
 
 // Onboarding Steps
@@ -25,11 +25,12 @@ const steps = [
 ];
 
 export default function OnboardingIndex({ categories, templates, logoLibrary }: OnboardingIndexProps) {
+    const { auth } = usePage<PageProps>().props;
     const [currentStep, setCurrentStep] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formData, setFormData] = useState<OnboardingData>({
         business_name: '',
-        business_phone: '',
+        business_phone: auth.user?.phone || '',
         business_address: '',
         category_id: '',
         template_id: '',
@@ -151,7 +152,7 @@ export default function OnboardingIndex({ categories, templates, logoLibrary }: 
                                 <span className="text-white text-xl font-bold">হি</span>
                             </div>
                             <span className="text-xl font-bold text-gray-900 dark:text-white">
-                                হিসাব করি
+                                হিসাব রাখি
                             </span>
                         </div>
                         <span className="text-sm text-gray-500 dark:text-gray-400">
