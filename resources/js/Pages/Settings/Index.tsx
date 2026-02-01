@@ -38,6 +38,7 @@ export default function Settings({ auth }: PageProps) {
             title: 'ডেটা',
             icon: '💾',
             items: [
+                { name: 'রিসাইকেল বিন', href: '/settings/recycle-bin' },
                 { name: 'ডেটা এক্সপোর্ট', href: '/settings/export' },
                 { name: 'ব্যাকআপ', href: '/settings/backup' },
             ]

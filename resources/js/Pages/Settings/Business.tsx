@@ -9,19 +9,21 @@ interface BusinessSettingsProps extends PageProps {
 
 export default function BusinessSettings({ auth, business }: BusinessSettingsProps) {
     const [logoPreview, setLogoPreview] = useState<string | null>(
-        business.logo ? (business.logo.startsWith('http') ? business.logo : `/storage/${business.logo}`) : null
+        business.logo_url && business.logo_url.length > 4 ? business.logo_url : null
     );
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const { data, setData, put, processing, errors } = useForm({
+    const { data, setData, post, processing, errors } = useForm({
         name: business.name || '',
         phone: business.phone || '',
         address: business.address || '',
         logo: null as File | null,
+        _method: 'PUT',
     });
 
     const isPremium = auth.business?.is_premium;
     const isTrial = auth.business?.is_trial;
+    const canUploadLogo = isPremium || isTrial; // Allow trial users to upload logo too
 
     const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -38,17 +40,7 @@ export default function BusinessSettings({ auth, business }: BusinessSettingsPro
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
-        const formData = new FormData();
-        formData.append('name', data.name);
-        formData.append('phone', data.phone);
-        formData.append('address', data.address);
-        if (data.logo) {
-            formData.append('logo', data.logo);
-        }
-        formData.append('_method', 'PUT');
-
-        // @ts-ignore
-        put('/settings/business', {
+        post('/settings/business', {
             forceFormData: true,
         });
     };
@@ -112,7 +104,7 @@ export default function BusinessSettings({ auth, business }: BusinessSettingsPro
                                     </span>
                                 )}
                             </div>
-                            {isPremium && (
+                            {canUploadLogo && (
                                 <button
                                     type="button"
                                     onClick={() => fileInputRef.current?.click()}
@@ -132,9 +124,9 @@ export default function BusinessSettings({ auth, business }: BusinessSettingsPro
                                 onChange={handleLogoChange}
                                 accept="image/*"
                                 className="hidden"
-                                disabled={!isPremium}
+                                disabled={!canUploadLogo}
                             />
-                            {isPremium ? (
+                            {canUploadLogo ? (
                                 <div>
                                     <button
                                         type="button"
@@ -147,7 +139,7 @@ export default function BusinessSettings({ auth, business }: BusinessSettingsPro
                                         সর্বোচ্চ 2MB, JPG, PNG বা GIF
                                     </p>
                                 </div>
-                            ) : (
+                            ) : !isTrial && (
                                 <div className="text-gray-400 text-sm">
                                     <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-700 rounded-lg text-xs">
                                         🔒 শুধুমাত্র প্রিমিয়াম
@@ -179,12 +171,12 @@ export default function BusinessSettings({ auth, business }: BusinessSettingsPro
                                     value={data.name}
                                     onChange={e => setData('name', e.target.value)}
                                     placeholder="আপনার ব্যবসার নাম"
-                                    className={`w-full px-4 py-3 bg-gray-700 border rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 ${!isPremium ? 'cursor-not-allowed opacity-60' : 'border-gray-600'
+                                    className={`w-full px-4 py-3 bg-gray-700 border rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 ${!canUploadLogo ? 'cursor-not-allowed opacity-60' : 'border-gray-600'
                                         }`}
-                                    disabled={!isPremium}
+                                    disabled={!canUploadLogo}
                                     required
                                 />
-                                {!isPremium && (
+                                {!canUploadLogo && (
                                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
                                         🔒
                                     </span>
@@ -293,8 +285,8 @@ export default function BusinessSettings({ auth, business }: BusinessSettingsPro
 
                     <button
                         type="submit"
-                        disabled={processing || !isPremium}
-                        className={`px-8 py-3 rounded-xl font-medium transition-all flex items-center gap-2 ${isPremium
+                        disabled={processing || !canUploadLogo}
+                        className={`px-8 py-3 rounded-xl font-medium transition-all flex items-center gap-2 ${canUploadLogo
                             ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:from-emerald-600 hover:to-teal-600'
                             : 'bg-gray-600 text-gray-400 cursor-not-allowed'
                             }`}

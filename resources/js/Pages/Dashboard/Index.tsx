@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { Link, usePage } from '@inertiajs/react';
+import { useState } from 'react';
+import { Link, router } from '@inertiajs/react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
-import type { PageProps, DashboardStats, Transaction } from '@/types';
+import type { PageProps, DashboardStats } from '@/types';
 import QuickActionsCustomizer from '@/Components/Dashboard/QuickActionsCustomizer';
 
 interface DashboardProps extends PageProps {
@@ -13,7 +13,7 @@ interface DashboardProps extends PageProps {
 // Default quick actions
 const defaultQuickActions = [
     { id: 'new_sale', name: 'নতুন বিক্রি', icon: '🛒', href: '/invoices/create', color: 'bg-green-500', isVisible: true, order: 0 },
-    { id: 'collect_due', name: 'বাকি আদায়', icon: '💰', href: '/payments/in', color: 'bg-blue-500', isVisible: true, order: 1 },
+    { id: 'collect_due', name: 'বাকি হিসাব', icon: '💰', href: '/dues', color: 'bg-blue-500', isVisible: true, order: 1 },
     { id: 'add_expense', name: 'খরচ যোগ', icon: '📝', href: '/expenses/create', color: 'bg-red-500', isVisible: true, order: 2 },
     { id: 'new_product', name: 'নতুন পণ্য', icon: '📦', href: '/products/create', color: 'bg-purple-500', isVisible: true, order: 3 },
     { id: 'new_invoice', name: 'নতুন বিল', icon: '🧾', href: '/invoices/create', color: 'bg-orange-500', isVisible: false, order: 4 },
@@ -50,10 +50,10 @@ const templateThemes: Record<string, any> = {
     'pharmacy-default': {
         primary: '#006A4E',
         accent: '#D1FAE5',
-        incomeLabel: 'আজকের বিক্রি',
-        expenseLabel: 'আজকের খরচ',
-        receivableLabel: 'বাকি পাওনা',
-        payableLabel: 'বাকি দেনা',
+        incomeLabel: 'মোট বিক্রি',
+        expenseLabel: 'মোট খরচ',
+        receivableLabel: 'মোট বাকি',
+        payableLabel: 'বাকি আদায়',
         actionLabel: 'নতুন প্রেসক্রিপশন',
         actionIcon: '💊',
         statsIcons: ['💊', '💸', '📥', '📤']
@@ -61,10 +61,10 @@ const templateThemes: Record<string, any> = {
     'grocery-default': {
         primary: '#006A4E',
         accent: '#10B981',
-        incomeLabel: 'আজকের বিক্রি',
-        expenseLabel: 'আজকের খরচ',
-        receivableLabel: 'মোট পাওনা',
-        payableLabel: 'মোট দেনা',
+        incomeLabel: 'মোট বিক্রি',
+        expenseLabel: 'মোট খরচ',
+        receivableLabel: 'মোট বাকি',
+        payableLabel: 'বাকি আদায়',
         actionLabel: 'নতুন বিক্রি',
         actionIcon: '🛒',
         statsIcons: ['💵', '💸', '📥', '📤']
@@ -72,10 +72,10 @@ const templateThemes: Record<string, any> = {
     'electrician-default': {
         primary: '#2563EB',
         accent: '#DBEAFE',
-        incomeLabel: 'সার্ভিস ফি',
-        expenseLabel: 'পার্টস খরচ',
-        receivableLabel: 'পাওনা বিল',
-        payableLabel: 'দেনা',
+        incomeLabel: 'মোট বিক্রি',
+        expenseLabel: 'মোট খরচ',
+        receivableLabel: 'মোট বাকি',
+        payableLabel: 'বাকি আদায়',
         actionLabel: 'নতুন কাজ',
         actionIcon: '🔨',
         statsIcons: ['⚡', '🔧', '📋', '💳']
@@ -142,14 +142,36 @@ export default function Dashboard({ auth, stats, business, template }: Dashboard
                 onSave={handleQuickActionsSave}
             />
 
-            {/* Welcome Section */}
-            <div className="mb-8">
-                <h1 className="text-2xl font-bold text-white">
-                    স্বাগতম, {auth.user?.name?.split(' ')[0] || 'ব্যবহারকারী'}! 👋
-                </h1>
-                <p className="text-gray-400 mt-1">
-                    আজকের তারিখ: {new Date().toLocaleDateString('bn-BD', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                </p>
+            {/* Welcome Section with Filter */}
+            <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold text-white">
+                        স্বাগতম, {auth.user?.name?.split(' ')[0] || 'ব্যবহারকারী'}! 👋
+                    </h1>
+                    <p className="text-gray-400 mt-1">
+                        আজকের তারিখ: {new Date().toLocaleDateString('bn-BD', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                    </p>
+                </div>
+                <div className="flex items-center gap-3">
+                    <select
+                        value={dashboardStats.filter || 'today'}
+                        onChange={(e) => {
+                            router.get('/dashboard', { filter: e.target.value }, { preserveState: true });
+                        }}
+                        className="px-4 py-2 rounded-xl bg-gray-800 border border-gray-700 text-white focus:border-teal-500 focus:outline-none text-sm"
+                    >
+                        <option value="today">📅 দৈনিক</option>
+                        <option value="week">📆 সাপ্তাহিক</option>
+                        <option value="month">🗓️ মাসিক</option>
+                        <option value="year">📊 বার্ষিক</option>
+                    </select>
+                    <a
+                        href={`/dashboard/export?filter=${dashboardStats.filter || 'today'}`}
+                        className="px-4 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white font-medium text-sm flex items-center gap-2 transition-colors"
+                    >
+                        📥 CSV ডাউনলোড
+                    </a>
+                </div>
             </div>
 
             {/* Stats Grid */}
@@ -161,7 +183,7 @@ export default function Dashboard({ auth, stats, business, template }: Dashboard
                         </div>
                         <div>
                             <p className="text-sm text-gray-400">{theme.incomeLabel}</p>
-                            <p className="text-xl font-bold text-white">{formatTaka(dashboardStats.today_income)}</p>
+                            <p className="text-xl font-bold text-white">{formatTaka(dashboardStats.total_income || 0)}</p>
                         </div>
                     </div>
                 </div>
@@ -172,7 +194,7 @@ export default function Dashboard({ auth, stats, business, template }: Dashboard
                         </div>
                         <div>
                             <p className="text-sm text-gray-400">{theme.expenseLabel}</p>
-                            <p className="text-xl font-bold text-white">{formatTaka(dashboardStats.today_expense)}</p>
+                            <p className="text-xl font-bold text-white">{formatTaka(dashboardStats.total_expense || 0)}</p>
                         </div>
                     </div>
                 </div>
@@ -183,7 +205,7 @@ export default function Dashboard({ auth, stats, business, template }: Dashboard
                         </div>
                         <div>
                             <p className="text-sm text-gray-400">{theme.receivableLabel}</p>
-                            <p className="text-xl font-bold text-white">{formatTaka(dashboardStats.total_receivable)}</p>
+                            <p className="text-xl font-bold text-white">{formatTaka(dashboardStats.total_due || 0)}</p>
                         </div>
                     </div>
                 </div>
@@ -194,7 +216,7 @@ export default function Dashboard({ auth, stats, business, template }: Dashboard
                         </div>
                         <div>
                             <p className="text-sm text-gray-400">{theme.payableLabel}</p>
-                            <p className="text-xl font-bold text-white">{formatTaka(dashboardStats.total_payable)}</p>
+                            <p className="text-xl font-bold text-white">{formatTaka(dashboardStats.total_collected || 0)}</p>
                         </div>
                     </div>
                 </div>
@@ -339,17 +361,17 @@ export default function Dashboard({ auth, stats, business, template }: Dashboard
                         <div className="space-y-4">
                             <div className="flex justify-between items-center">
                                 <span className="opacity-80">{theme.incomeLabel}</span>
-                                <span className="font-bold">{formatTaka(dashboardStats.today_income)}</span>
+                                <span className="font-bold">{formatTaka(dashboardStats.total_income || 0)}</span>
                             </div>
                             <div className="flex justify-between items-center">
                                 <span className="opacity-80">{theme.expenseLabel}</span>
-                                <span className="font-bold">{formatTaka(dashboardStats.today_expense)}</span>
+                                <span className="font-bold">{formatTaka(dashboardStats.total_expense || 0)}</span>
                             </div>
                             <hr className="border-white/20" />
                             <div className="flex justify-between items-center">
                                 <span className="font-medium">নীট লাভ</span>
                                 <span className="text-xl font-bold">
-                                    {formatTaka(dashboardStats.today_income - dashboardStats.today_expense)}
+                                    {formatTaka((dashboardStats.total_income || 0) - (dashboardStats.total_expense || 0))}
                                 </span>
                             </div>
                         </div>

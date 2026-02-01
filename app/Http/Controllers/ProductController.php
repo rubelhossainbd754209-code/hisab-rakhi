@@ -70,7 +70,21 @@ class ProductController extends Controller
 
     public function create()
     {
-        return Inertia::render('Products/Create');
+        $business = auth()->user()->business;
+        $suppliers = Product::where('business_id', $business->id)
+            ->whereNotNull('supplier_name')
+            ->distinct()
+            ->pluck('supplier_name');
+        
+        $sources = Product::where('business_id', $business->id)
+            ->whereNotNull('purchase_source')
+            ->distinct()
+            ->pluck('purchase_source');
+
+        return Inertia::render('Products/Create', [
+            'suppliers' => $suppliers,
+            'sources' => $sources,
+        ]);
     }
 
     public function store(Request $request)
@@ -85,6 +99,8 @@ class ProductController extends Controller
             'alert_quantity' => 'nullable|numeric|min:0',
             'unit' => 'nullable|string|max:50',
             'description' => 'nullable|string',
+            'supplier_name' => 'nullable|string|max:255',
+            'purchase_source' => 'nullable|string|max:255',
         ]);
 
         // Set defaults for nullable fields that can't be null in DB
@@ -105,8 +121,21 @@ class ProductController extends Controller
             abort(403);
         }
 
+        $business = auth()->user()->business;
+        $suppliers = Product::where('business_id', $business->id)
+            ->whereNotNull('supplier_name')
+            ->distinct()
+            ->pluck('supplier_name');
+        
+        $sources = Product::where('business_id', $business->id)
+            ->whereNotNull('purchase_source')
+            ->distinct()
+            ->pluck('purchase_source');
+
         return Inertia::render('Products/Create', [
             'product' => $product,
+            'suppliers' => $suppliers,
+            'sources' => $sources,
         ]);
     }
 
@@ -126,6 +155,8 @@ class ProductController extends Controller
             'alert_quantity' => 'nullable|numeric|min:0',
             'unit' => 'nullable|string|max:50',
             'description' => 'nullable|string',
+            'supplier_name' => 'nullable|string|max:255',
+            'purchase_source' => 'nullable|string|max:255',
         ]);
 
         $product->update($validated);

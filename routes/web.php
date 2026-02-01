@@ -215,6 +215,7 @@ Route::middleware(['auth', EnsureUserIsApproved::class])->group(function () {
 Route::middleware(['auth', EnsureUserIsApproved::class, EnsureOnboardingIsComplete::class])->group(function () {
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/export', [DashboardController::class, 'exportSummary'])->name('dashboard.export');
 
     // Transactions
     Route::prefix('transactions')->name('transactions.')->group(function () {
@@ -235,6 +236,18 @@ Route::middleware(['auth', EnsureUserIsApproved::class, EnsureOnboardingIsComple
     Route::get('/returns/search', [ProductReturnController::class, 'search'])->name('returns.search');
     Route::resource('returns', ProductReturnController::class);
 
+    // Dues (বাকি হিসাব)
+    Route::prefix('dues')->name('dues.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\DueController::class, 'index'])->name('index');
+        Route::post('/', [\App\Http\Controllers\DueController::class, 'store'])->name('store');
+        Route::put('/{due}', [\App\Http\Controllers\DueController::class, 'update'])->name('update');
+        Route::delete('/{due}', [\App\Http\Controllers\DueController::class, 'destroy'])->name('destroy');
+        Route::post('/{due}/collect', [\App\Http\Controllers\DueController::class, 'collect'])->name('collect');
+        Route::post('/party/{party}/collect', [\App\Http\Controllers\DueController::class, 'collectFromParty'])->name('collect-party');
+        Route::get('/{due}/share', [\App\Http\Controllers\DueController::class, 'getShareMessage'])->name('share');
+        Route::get('/party/{party}/share', [\App\Http\Controllers\DueController::class, 'getPartyShareMessage'])->name('share-party');
+    });
+
     // Reports
     Route::prefix('reports')->name('reports.')->group(function () {
         Route::get('/', function () {
@@ -252,6 +265,18 @@ Route::middleware(['auth', EnsureUserIsApproved::class, EnsureOnboardingIsComple
         Route::get('/business', [BusinessSettingsController::class, 'index'])->name('business');
         Route::put('/business', [BusinessSettingsController::class, 'update'])->name('business.update');
         Route::delete('/business/logo', [BusinessSettingsController::class, 'removeLogo'])->name('business.logo.remove');
+        
+        // Password Change
+        Route::get('/password', function () {
+            return Inertia::render('Settings/Password');
+        })->name('password');
+        Route::put('/password', [ProfileController::class, 'updatePassword'])->name('password.update');
+        
+        // Recycle Bin
+        Route::get('/recycle-bin', [\App\Http\Controllers\RecycleBinController::class, 'index'])->name('recycle-bin');
+        Route::post('/recycle-bin/{type}/{id}/restore', [\App\Http\Controllers\RecycleBinController::class, 'restore'])->name('recycle-bin.restore');
+        Route::delete('/recycle-bin/{type}/{id}', [\App\Http\Controllers\RecycleBinController::class, 'forceDelete'])->name('recycle-bin.force-delete');
+        Route::delete('/recycle-bin', [\App\Http\Controllers\RecycleBinController::class, 'empty'])->name('recycle-bin.empty');
     });
 
     // Profile
@@ -314,6 +339,23 @@ Route::middleware(['auth', EnsureUserIsAdmin::class])->prefix('admin')->name('ad
             $status = $user->is_active ? 'সক্রিয়' : 'নিষ্ক্রিয়';
             return back()->with('success', "ব্যবহারকারী {$status} করা হয়েছে।");
         })->name('toggle-active');
+        
+        // Reset Password (Admin)
+        Route::put('/{user}/reset-password', function (Request $request, User $user) {
+            $validated = $request->validate([
+                'password' => ['required', 'string', 'min:8', 'confirmed'],
+            ], [
+                'password.required' => 'নতুন পাসওয়ার্ড দিন।',
+                'password.min' => 'পাসওয়ার্ড কমপক্ষে ৮ অক্ষর হতে হবে।',
+                'password.confirmed' => 'পাসওয়ার্ড মিলছে না।',
+            ]);
+            
+            $user->update([
+                'password' => Hash::make($validated['password']),
+            ]);
+            
+            return back()->with('success', 'পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে।');
+        })->name('reset-password');
     });
 
     // Categories Management

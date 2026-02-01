@@ -14,11 +14,12 @@ const defaultMenuItems = [
     { id: 'dashboard', name: 'ড্যাশবোর্ড', icon: '🏠', href: '/dashboard', isVisible: true, order: 0 },
     { id: 'transactions', name: 'দৈনিক হিসাব', icon: '📅', href: '/transactions', isVisible: true, order: 1 },
     { id: 'parties', name: 'গ্রাহক', icon: '👥', href: '/parties', isVisible: true, order: 2 },
-    { id: 'products', name: 'পণ্য সমূহ', icon: '📦', href: '/products', isVisible: true, order: 3 },
-    { id: 'invoices', name: 'বিল/চালান', icon: '🧾', href: '/invoices', isVisible: true, order: 4 },
-    { id: 'returns', name: 'রিটার্ন প্রোডাক্ট', icon: '🔄', href: '/returns', isVisible: true, order: 5 },
-    { id: 'reports', name: 'রিপোর্ট', icon: '📊', href: '/reports', isVisible: true, order: 6 },
-    { id: 'settings', name: 'সেটিংস', icon: '⚙️', href: '/settings', isVisible: true, order: 7 },
+    { id: 'dues', name: 'বাকি হিসাব', icon: '💰', href: '/dues', isVisible: true, order: 3 },
+    { id: 'products', name: 'পণ্য সমূহ', icon: '📦', href: '/products', isVisible: true, order: 4 },
+    { id: 'invoices', name: 'বিল/চালান', icon: '🧾', href: '/invoices', isVisible: true, order: 5 },
+    { id: 'returns', name: 'রিটার্ন প্রোডাক্ট', icon: '🔄', href: '/returns', isVisible: true, order: 6 },
+    { id: 'reports', name: 'রিপোর্ট', icon: '📊', href: '/reports', isVisible: true, order: 7 },
+    { id: 'settings', name: 'সেটিংস', icon: '⚙️', href: '/settings', isVisible: true, order: 8 },
 ];
 
 interface MenuItem {
@@ -43,10 +44,26 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
     const [isMenuCustomizerOpen, setIsMenuCustomizerOpen] = useState(false);
     const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
 
-    // Load menu items
+    // Load menu items - merge with defaults to include new items
     const [menuItems, setMenuItems] = useState<MenuItem[]>(() => {
         const saved = typeof window !== 'undefined' ? localStorage.getItem('hisab_menu_config') : null;
-        return saved ? JSON.parse(saved) : defaultMenuItems;
+        if (!saved) return defaultMenuItems;
+
+        const savedItems: MenuItem[] = JSON.parse(saved);
+        const savedIds = new Set(savedItems.map(item => item.id));
+
+        // Add any new default items that aren't in saved config
+        const newItems = defaultMenuItems.filter(item => !savedIds.has(item.id));
+        if (newItems.length > 0) {
+            const merged = [...savedItems, ...newItems];
+            // Re-sort by order
+            merged.sort((a, b) => a.order - b.order);
+            // Update localStorage with merged items
+            localStorage.setItem('hisab_menu_config', JSON.stringify(merged));
+            return merged;
+        }
+
+        return savedItems;
     });
 
     // Update terminology when business changes
@@ -169,12 +186,12 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
                         <div className="p-4 m-4 bg-gray-700/50 rounded-xl">
                             <div className="flex items-center gap-3">
                                 <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white text-lg overflow-hidden bg-gray-800">
-                                    {auth.business.logo ? (
-                                        auth.business.logo.length <= 4 ? (
-                                            <span className="text-2xl">{auth.business.logo}</span>
+                                    {auth.business.logo_url ? (
+                                        auth.business.logo_url.length <= 4 ? (
+                                            <span className="text-2xl">{auth.business.logo_url}</span>
                                         ) : (
                                             <img
-                                                src={auth.business.logo.startsWith('http') ? auth.business.logo : `/storage/${auth.business.logo}`}
+                                                src={auth.business.logo_url}
                                                 alt={auth.business.name}
                                                 className="w-full h-full object-cover"
                                             />
@@ -325,12 +342,12 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
                                         className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-gray-700 transition-colors"
                                     >
                                         <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-semibold overflow-hidden bg-gray-600">
-                                            {auth.business?.logo ? (
-                                                auth.business.logo.length <= 4 ? (
-                                                    <span>{auth.business.logo}</span>
+                                            {auth.business?.logo_url ? (
+                                                auth.business.logo_url.length <= 4 ? (
+                                                    <span>{auth.business.logo_url}</span>
                                                 ) : (
                                                     <img
-                                                        src={auth.business.logo.startsWith('http') ? auth.business.logo : `/storage/${auth.business.logo}`}
+                                                        src={auth.business.logo_url}
                                                         alt="Logo"
                                                         className="w-full h-full object-cover"
                                                     />

@@ -35,9 +35,9 @@ class BusinessSettingsController extends Controller
             return redirect()->route('onboarding');
         }
 
-        // Check if user has premium subscription
-        if (!$business->isPremium()) {
-            return back()->with('error', 'এই ফিচার শুধুমাত্র প্রিমিয়াম ইউজারদের জন্য।');
+        // Check if user has premium or trial subscription
+        if (!$business->isPremium() && !$business->isInTrial()) {
+            return back()->with('error', 'এই ফিচার শুধুমাত্র প্রিমিয়াম/ট্রায়াল ইউজারদের জন্য।');
         }
 
         $validated = $request->validate([
@@ -54,16 +54,31 @@ class BusinessSettingsController extends Controller
             'logo.max' => 'লোগোর সাইজ ২MB এর বেশি হতে পারবে না।',
         ]);
 
-        // Handle logo upload
+        // Handle logo upload via Cloudinary
         if ($request->hasFile('logo')) {
-            // Delete old logo if exists
-            if ($business->logo && !str_starts_with($business->logo, 'http')) {
-                Storage::disk('public')->delete($business->logo);
+            $cloudinary = new \App\Services\CloudinaryService();
+            
+            // Check if Cloudinary is configured
+            if (!$cloudinary->hasActiveAccount()) {
+                return back()->with('error', 'Cloudinary কনফিগার করা হয়নি। অ্যাডমিনের সাথে যোগাযোগ করুন।');
             }
-
-            // Store new logo
-            $logoPath = $request->file('logo')->store('business-logos', 'public');
-            $validated['logo'] = $logoPath;
+            
+            try {
+                // Delete old logo from Cloudinary if it's a Cloudinary URL
+                if ($business->logo && str_contains($business->logo, 'cloudinary.com')) {
+                    // Extract public_id from URL
+                    if (preg_match('/\/v\d+\/(.+?)\.[a-z]+$/i', $business->logo, $matches)) {
+                        $oldPublicId = $matches[1];
+                        $cloudinary->delete($oldPublicId);
+                    }
+                }
+                
+                // Upload to Cloudinary
+                $result = $cloudinary->upload($request->file('logo'), 'business-logos');
+                $validated['logo'] = $result['secure_url'];
+            } catch (\Exception $e) {
+                return back()->with('error', 'লোগো আপলোড করতে সমস্যা হয়েছে: ' . $e->getMessage());
+            }
         }
 
         // Update business
@@ -88,13 +103,23 @@ class BusinessSettingsController extends Controller
             return redirect()->route('onboarding');
         }
 
-        if (!$business->isPremium()) {
-            return back()->with('error', 'এই ফিচার শুধুমাত্র প্রিমিয়াম ইউজারদের জন্য।');
+        if (!$business->isPremium() && !$business->isInTrial()) {
+            return back()->with('error', 'এই ফিচার শুধুমাত্র প্রিমিয়াম/ট্রায়াল ইউজারদের জন্য।');
         }
 
-        // Delete logo file
-        if ($business->logo && !str_starts_with($business->logo, 'http')) {
-            Storage::disk('public')->delete($business->logo);
+        // Delete logo file from Cloudinary
+        if ($business->logo && str_contains($business->logo, 'cloudinary.com')) {
+            try {
+                $cloudinary = new \App\Services\CloudinaryService();
+                if ($cloudinary->hasActiveAccount()) {
+                    // Extract public_id from URL
+                    if (preg_match('/\/v\d+\/(.+?)\.[a-z]+$/i', $business->logo, $matches)) {
+                        $cloudinary->delete($matches[1]);
+                    }
+                }
+            } catch (\Exception $e) {
+                // Silent fail - logo will be removed from DB anyway
+            }
         }
 
         $business->update(['logo' => null]);

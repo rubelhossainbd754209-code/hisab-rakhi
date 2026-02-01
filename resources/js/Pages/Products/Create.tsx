@@ -5,9 +5,11 @@ import type { PageProps, Product } from '@/types';
 
 interface CreateProps extends PageProps {
     product?: Product;
+    suppliers: string[];
+    sources: string[];
 }
 
-export default function Create({ auth, product }: CreateProps) {
+export default function Create({ auth, product, suppliers, sources }: CreateProps) {
     const isEditing = !!product;
 
     const { data, setData, post, put, processing, errors, reset } = useForm({
@@ -20,6 +22,8 @@ export default function Create({ auth, product }: CreateProps) {
         alert_quantity: product?.alert_quantity || '',
         unit: product?.unit || 'pcs',
         description: product?.description || '',
+        supplier_name: product?.supplier_name || '',
+        purchase_source: product?.purchase_source || '',
     });
 
     const submit = (e: React.FormEvent) => {
@@ -162,6 +166,52 @@ export default function Create({ auth, product }: CreateProps) {
                                         placeholder="এই সংখ্যার নিচে নামলে সতর্ক করবে"
                                         step="0.01"
                                     />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Supplier Info Section */}
+                        <div className="space-y-4 pt-4">
+                            <h2 className="text-lg font-semibold text-purple-400 border-b border-gray-700 pb-2 mb-4">
+                                🏭 সাপ্লায়ার তথ্য (ঐচ্ছিক)
+                            </h2>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                                        কোম্পানি / সাপ্লায়ারের নাম
+                                    </label>
+                                    <input
+                                        type="text"
+                                        list="supplier_list"
+                                        value={data.supplier_name}
+                                        onChange={e => setData('supplier_name', e.target.value)}
+                                        className="w-full px-4 py-3 rounded-xl bg-gray-700 border border-gray-600 text-white focus:border-purple-500 outline-none transition-all"
+                                        placeholder="উদাহরণ: ABC Electronics"
+                                    />
+                                    <datalist id="supplier_list">
+                                        {suppliers.map((s, i) => (
+                                            <option key={i} value={s} />
+                                        ))}
+                                    </datalist>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                                        ক্রয়ের উৎস / কোথা থেকে কেনা
+                                    </label>
+                                    <input
+                                        type="text"
+                                        list="source_list"
+                                        value={data.purchase_source}
+                                        onChange={e => setData('purchase_source', e.target.value)}
+                                        className="w-full px-4 py-3 rounded-xl bg-gray-700 border border-gray-600 text-white focus:border-purple-500 outline-none transition-all"
+                                        placeholder="উদাহরণ: এলিফ্যান্ট রোড, ঢাকা"
+                                    />
+                                    <datalist id="source_list">
+                                        {sources.map((s, i) => (
+                                            <option key={i} value={s} />
+                                        ))}
+                                    </datalist>
                                 </div>
                             </div>
                         </div>

@@ -21,6 +21,8 @@ export default function Products({ products, filters, stats }: ProductsProps) {
     const [searchQuery, setSearchQuery] = useState(filters.search || '');
     const [currentFilter, setCurrentFilter] = useState(filters.filter || 'all');
     const [copiedCode, setCopiedCode] = useState<string | null>(null);
+    const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; name: string } | null>(null);
+    const [deleting, setDeleting] = useState(false);
 
     // Copy to clipboard with feedback
     const copyToClipboard = (code: string) => {
@@ -56,6 +58,21 @@ export default function Products({ products, filters, stats }: ProductsProps) {
         }, {
             preserveState: true,
             preserveScroll: true
+        });
+    };
+
+    // Handle Delete Product
+    const handleDelete = () => {
+        if (!deleteConfirm) return;
+        setDeleting(true);
+        router.delete(`/products/${deleteConfirm.id}`, {
+            onSuccess: () => {
+                setDeleteConfirm(null);
+                setDeleting(false);
+            },
+            onError: () => {
+                setDeleting(false);
+            }
         });
     };
 
@@ -154,6 +171,7 @@ export default function Products({ products, filters, stats }: ProductsProps) {
                                     <th className="px-4 py-4">বিক্রয় মূল্য</th>
                                     <th className="px-4 py-4">ক্রয় মূল্য</th>
                                     <th className="px-4 py-4">মজুদ (Stock)</th>
+                                    <th className="px-3 py-4 text-xs">সাপ্লায়ার</th>
                                     <th className="px-4 py-4">Status</th>
                                     <th className="px-4 py-4 text-right">Action</th>
                                 </tr>
@@ -174,8 +192,8 @@ export default function Products({ products, filters, stats }: ProductsProps) {
                                             <td className="px-3 py-4">
                                                 <span
                                                     className={`px-2 py-1 rounded-md text-xs font-mono font-bold cursor-pointer transition-all ${copiedCode === quickCode
-                                                            ? 'bg-green-600 text-white scale-105'
-                                                            : 'bg-teal-900/30 text-teal-400 hover:bg-teal-800/50'
+                                                        ? 'bg-green-600 text-white scale-105'
+                                                        : 'bg-teal-900/30 text-teal-400 hover:bg-teal-800/50'
                                                         }`}
                                                     title="ক্লিক করে কপি করুন"
                                                     onClick={() => copyToClipboard(quickCode)}
@@ -205,6 +223,16 @@ export default function Products({ products, filters, stats }: ProductsProps) {
                                                 <span className="font-bold text-white">{product.stock}</span>
                                                 <span className="text-xs text-gray-500 ml-1">{product.unit}</span>
                                             </td>
+                                            {/* Supplier Column - Small */}
+                                            <td className="px-3 py-4">
+                                                {product.supplier_name ? (
+                                                    <span className="text-xs text-purple-400 truncate max-w-[80px] inline-block" title={product.supplier_name}>
+                                                        {product.supplier_name.length > 12 ? product.supplier_name.substring(0, 12) + '...' : product.supplier_name}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-xs text-gray-600">---</span>
+                                                )}
+                                            </td>
                                             <td className="px-6 py-4">
                                                 <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${product.stock <= 0
                                                     ? 'bg-red-500/10 text-red-500 border border-red-500/20'
@@ -217,13 +245,22 @@ export default function Products({ products, filters, stats }: ProductsProps) {
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 text-right">
-                                                <Link
-                                                    href={`/products/${product.id}/edit`}
-                                                    className="text-gray-400 hover:text-white hover:bg-gray-700 p-2 rounded-lg transition-all"
-                                                    title="Edit Product"
-                                                >
-                                                    ✏️
-                                                </Link>
+                                                <div className="flex items-center justify-end gap-1">
+                                                    <Link
+                                                        href={`/products/${product.id}/edit`}
+                                                        className="text-gray-400 hover:text-white hover:bg-gray-700 p-2 rounded-lg transition-all"
+                                                        title="Edit Product"
+                                                    >
+                                                        ✏️
+                                                    </Link>
+                                                    <button
+                                                        onClick={() => setDeleteConfirm({ id: product.id, name: product.name })}
+                                                        className="text-gray-400 hover:text-red-400 hover:bg-red-500/10 p-2 rounded-lg transition-all"
+                                                        title="Delete Product"
+                                                    >
+                                                        🗑️
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     );
@@ -253,6 +290,50 @@ export default function Products({ products, filters, stats }: ProductsProps) {
                     >
                         সকল ফিল্টার মুছুন
                     </button>
+                </div>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {deleteConfirm && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                    <div className="bg-gray-800 rounded-2xl p-6 max-w-md w-full mx-4 border border-gray-700 shadow-2xl">
+                        <div className="text-center">
+                            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-500/10 flex items-center justify-center">
+                                <span className="text-4xl">⚠️</span>
+                            </div>
+                            <h3 className="text-xl font-bold text-white mb-2">পণ্য ডিলিট করবেন?</h3>
+                            <p className="text-gray-400 mb-4">
+                                আপনি কি নিশ্চিত "<span className="text-white font-medium">{deleteConfirm.name}</span>" ডিলিট করতে চান?
+                                এই কাজটি ফিরিয়ে আনা যাবে না।
+                            </p>
+                        </div>
+                        <div className="flex gap-3 mt-6">
+                            <button
+                                onClick={() => setDeleteConfirm(null)}
+                                disabled={deleting}
+                                className="flex-1 px-4 py-3 rounded-xl bg-gray-700 text-white font-medium hover:bg-gray-600 transition-colors disabled:opacity-50"
+                            >
+                                বাতিল
+                            </button>
+                            <button
+                                onClick={handleDelete}
+                                disabled={deleting}
+                                className="flex-1 px-4 py-3 rounded-xl bg-red-600 text-white font-medium hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                            >
+                                {deleting ? (
+                                    <>
+                                        <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                        </svg>
+                                        ডিলিট হচ্ছে...
+                                    </>
+                                ) : (
+                                    <>🗑️ হ্যাঁ, ডিলিট করুন</>
+                                )}
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
         </DashboardLayout>

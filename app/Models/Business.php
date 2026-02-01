@@ -34,6 +34,31 @@ class Business extends Model
         'last_activity_at' => 'datetime',
     ];
 
+    protected $appends = ['logo_url'];
+
+    /**
+     * Get the full logo URL
+     */
+    public function getLogoUrlAttribute(): ?string
+    {
+        if (!$this->logo) {
+            return null;
+        }
+        
+        // If it's already a full URL, return as is
+        if (str_starts_with($this->logo, 'http')) {
+            return $this->logo;
+        }
+        
+        // If it's an emoji (short string), return as is
+        if (strlen($this->logo) <= 4) {
+            return $this->logo;
+        }
+        
+        // Return storage URL
+        return asset('storage/' . $this->logo);
+    }
+
     /**
      * Get the owner
      */

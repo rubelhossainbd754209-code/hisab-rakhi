@@ -21,6 +21,7 @@ export interface Business {
     phone?: string;
     address?: string;
     logo?: string;
+    logo_url?: string;
     settings: BusinessSettings;
     subscription_type: 'free' | 'basic' | 'premium';
     subscription_expires?: string;
@@ -124,6 +125,8 @@ export interface Product {
     sku?: string;
     barcode?: string;
     description?: string;
+    supplier_name?: string;
+    purchase_source?: string;
     purchase_price: number;
     selling_price: number;
     stock: number;
@@ -194,14 +197,19 @@ export interface InvoiceItem {
 
 // Dashboard Stats
 export interface DashboardStats {
-    today_income: number;
-    today_expense: number;
-    today_profit: number;
-    total_receivable: number;
-    total_payable: number;
+    total_income: number;
+    total_expense: number;
+    total_profit: number;
+    total_due: number;
+    total_collected: number;
     low_stock_count: number;
     pending_invoices: number;
     recent_transactions: Transaction[];
+    filter: 'today' | 'week' | 'month' | 'year';
+    date_range: {
+        start: string;
+        end: string;
+    };
 }
 
 // Pagination Types

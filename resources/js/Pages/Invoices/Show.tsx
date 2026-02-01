@@ -46,11 +46,14 @@ export default function Show({ invoice }: ShowProps) {
                     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap');
                     
                     * { margin: 0; padding: 0; box-sizing: border-box; }
+                    
                     body { 
                         font-family: 'Noto Sans Bengali', 'Segoe UI', Arial, sans-serif; 
-                        padding: 15px;
-                        color: #1a1a1a;
-                        max-width: 80mm;
+                        padding: 15px 25px;
+                        color: #000;
+                        background: #fff;
+                        width: 210mm;
+                        max-height: 297mm;
                         margin: 0 auto;
                         font-size: 12px;
                         line-height: 1.4;
@@ -60,179 +63,259 @@ export default function Show({ invoice }: ShowProps) {
                     .header { 
                         text-align: center; 
                         padding-bottom: 12px; 
-                        border-bottom: 2px double #333;
+                        border-bottom: 2px solid #000;
                         margin-bottom: 10px;
                     }
                     .logo-section {
-                        margin-bottom: 8px;
+                        margin-bottom: 5px;
                     }
                     .logo-section img {
                         max-height: 50px;
-                        max-width: 120px;
+                        max-width: 150px;
                         object-fit: contain;
-                    }
-                    .logo-placeholder {
-                        font-size: 28px;
-                        margin-bottom: 5px;
+                        filter: grayscale(100%);
                     }
                     .business-name { 
-                        font-size: 20px; 
+                        font-size: 22px; 
                         font-weight: 700; 
-                        color: #006A4E;
+                        color: #000;
                         margin-bottom: 3px;
-                    }
-                    .business-tagline {
-                        font-size: 10px;
-                        color: #666;
-                        margin-bottom: 5px;
+                        text-transform: uppercase;
+                        letter-spacing: 1px;
                     }
                     .business-info { 
-                        font-size: 10px; 
-                        color: #555;
+                        font-size: 11px; 
+                        color: #333;
                         line-height: 1.3;
                     }
+                    .business-info span {
+                        margin: 0 10px;
+                    }
                     
-                    /* Invoice Info */
-                    .invoice-meta {
+                    /* Invoice Title */
+                    .invoice-title {
+                        text-align: center;
+                        font-size: 16px;
+                        font-weight: 700;
+                        margin: 10px 0;
+                        padding: 6px;
+                        border: 2px solid #000;
+                        display: inline-block;
+                        width: 100%;
+                    }
+                    
+                    /* Invoice Meta & Customer Info */
+                    .info-section {
                         display: flex;
                         justify-content: space-between;
-                        background: #f8f9fa;
-                        padding: 8px 10px;
-                        border-radius: 5px;
-                        margin: 10px 0;
-                        font-size: 11px;
+                        margin: 12px 0;
+                        padding: 10px 15px;
+                        border: 1px solid #000;
                     }
-                    .invoice-number { 
-                        font-weight: 700; 
-                        font-size: 13px;
-                        color: #006A4E;
+                    .info-box {
+                        flex: 1;
                     }
-                    
-                    /* Customer Section */
-                    .customer { 
-                        padding: 10px;
-                        margin: 10px 0;
-                        background: #f0f7f5;
-                        border-left: 3px solid #006A4E;
-                        border-radius: 0 5px 5px 0;
+                    .info-box:first-child {
+                        border-right: 1px solid #000;
+                        padding-right: 15px;
+                        margin-right: 15px;
                     }
-                    .customer-label {
-                        font-size: 9px;
-                        color: #666;
+                    .info-label {
+                        font-size: 10px;
+                        font-weight: 700;
                         text-transform: uppercase;
                         letter-spacing: 0.5px;
+                        color: #333;
+                        margin-bottom: 3px;
+                        border-bottom: 1px solid #333;
+                        padding-bottom: 2px;
                     }
-                    .customer-name {
-                        font-weight: 600;
+                    .info-value {
                         font-size: 13px;
-                        color: #1a1a1a;
+                        font-weight: 600;
+                        color: #000;
+                        margin-bottom: 2px;
                     }
-                    .customer-details {
-                        font-size: 10px;
-                        color: #555;
+                    .info-details {
+                        font-size: 11px;
+                        color: #333;
                     }
                     
                     /* Items Table */
                     .items { 
                         width: 100%; 
                         border-collapse: collapse; 
-                        margin: 12px 0;
+                        margin: 10px 0;
                     }
                     .items th { 
-                        background: #006A4E;
-                        color: white;
-                        padding: 8px 5px;
-                        font-size: 10px;
+                        background: #000;
+                        color: #fff;
+                        padding: 6px 8px;
+                        font-size: 11px;
                         font-weight: 600;
                         text-align: left;
+                        border: 1px solid #000;
                     }
-                    .items th:last-child,
-                    .items td:last-child { text-align: right; }
+                    .items th.center { text-align: center; }
+                    .items th.right { text-align: right; }
                     .items td { 
-                        padding: 8px 5px;
-                        border-bottom: 1px dashed #ddd;
+                        padding: 6px 8px;
+                        border: 1px solid #000;
                         font-size: 11px;
+                        vertical-align: middle;
                     }
-                    .items tr:last-child td {
-                        border-bottom: none;
+                    .items td.center { text-align: center; }
+                    .items td.right { text-align: right; }
+                    .items tbody tr:nth-child(even) {
+                        background: #f5f5f5;
                     }
-                    .items .qty { text-align: center; }
+                    .items .product-name {
+                        font-weight: 600;
+                    }
+                    .items .warranty-badge {
+                        font-size: 10px;
+                        padding: 2px 5px;
+                        border: 1px solid #000;
+                        display: inline-block;
+                    }
                     
-                    /* Totals */
+                    /* Totals Section */
+                    .totals-section {
+                        display: flex;
+                        justify-content: flex-end;
+                        margin: 10px 0;
+                    }
                     .totals {
-                        background: #f8f9fa;
-                        padding: 10px;
-                        border-radius: 5px;
-                        margin-top: 10px;
+                        width: 280px;
+                        border: 2px solid #000;
                     }
                     .totals-row { 
                         display: flex; 
                         justify-content: space-between; 
-                        padding: 4px 0;
+                        padding: 5px 10px;
                         font-size: 11px;
+                        border-bottom: 1px solid #ccc;
+                    }
+                    .totals-row:last-child {
+                        border-bottom: none;
                     }
                     .totals-row.grand { 
-                        font-size: 16px; 
+                        font-size: 14px; 
                         font-weight: 700; 
-                        color: #006A4E;
-                        border-top: 2px solid #006A4E;
-                        margin-top: 8px;
-                        padding-top: 10px;
+                        background: #000;
+                        color: #fff;
+                        padding: 8px 10px;
                     }
                     .totals-row.due {
-                        color: #dc3545;
-                        font-weight: 600;
+                        font-weight: 700;
+                        background: #f0f0f0;
                     }
                     .totals-row.paid {
-                        color: #28a745;
+                        font-weight: 600;
                     }
                     
                     /* Status Badge */
                     .status { 
                         text-align: center; 
-                        margin: 15px 0; 
-                        padding: 10px;
-                        border-radius: 8px;
+                        margin: 10px 0; 
+                        padding: 8px;
                         font-weight: 700;
-                        font-size: 13px;
+                        font-size: 12px;
+                        border: 2px solid #000;
                     }
-                    .status.paid { background: #d4edda; color: #155724; }
-                    .status.partial { background: #fff3cd; color: #856404; }
-                    .status.unpaid { background: #f8d7da; color: #721c24; }
+                    .status.paid { background: #fff; }
+                    .status.partial { background: #f5f5f5; }
+                    .status.unpaid { background: #e5e5e5; }
+                    
+                    /* Warranty Notice */
+                    .warranty-notice {
+                        border: 1px solid #000;
+                        padding: 8px 10px;
+                        margin: 8px 0;
+                        font-size: 10px;
+                    }
+                    .warranty-notice strong {
+                        display: block;
+                        margin-bottom: 4px;
+                        font-size: 11px;
+                    }
+                    .warranty-notice ul {
+                        margin-left: 15px;
+                    }
+                    .warranty-notice li {
+                        margin-bottom: 1px;
+                    }
+                    
+                    /* Signature Section */
+                    .signature-section {
+                        display: flex;
+                        justify-content: space-between;
+                        margin-top: 25px;
+                        padding-top: 15px;
+                    }
+                    .signature-box {
+                        text-align: center;
+                        width: 150px;
+                    }
+                    .signature-line {
+                        border-top: 1px solid #000;
+                        padding-top: 5px;
+                        font-size: 10px;
+                        font-weight: 600;
+                    }
                     
                     /* Footer */
                     .footer { 
                         text-align: center; 
                         margin-top: 15px;
-                        padding-top: 12px;
-                        border-top: 2px double #333;
+                        padding-top: 10px;
+                        border-top: 1px solid #000;
                     }
                     .thank-you {
                         font-size: 14px;
-                        font-weight: 600;
-                        color: #006A4E;
-                        margin-bottom: 5px;
+                        font-weight: 700;
+                        margin-bottom: 3px;
                     }
                     .footer-msg {
                         font-size: 10px;
-                        color: #666;
-                        margin-bottom: 3px;
+                        color: #333;
                     }
                     .footer-brand {
                         font-size: 9px;
-                        color: #999;
+                        color: #666;
                         margin-top: 8px;
+                        padding-top: 5px;
+                        border-top: 1px dashed #999;
                     }
                     
-                    /* QR Placeholder */
-                    .qr-section {
-                        text-align: center;
-                        margin: 10px 0;
-                    }
-                    
+                    /* Print Styles */
                     @media print {
-                        body { padding: 5px; }
-                        @page { margin: 3mm; }
+                        body { 
+                            padding: 10mm 12mm;
+                            width: 100%;
+                            max-height: 277mm;
+                        }
+                        @page { 
+                            size: A4;
+                            margin: 10mm;
+                        }
+                        .items tbody tr:nth-child(even) {
+                            background: #f5f5f5 !important;
+                            -webkit-print-color-adjust: exact;
+                            print-color-adjust: exact;
+                        }
+                        .items th {
+                            background: #000 !important;
+                            color: #fff !important;
+                            -webkit-print-color-adjust: exact;
+                            print-color-adjust: exact;
+                        }
+                        .totals-row.grand {
+                            background: #000 !important;
+                            color: #fff !important;
+                            -webkit-print-color-adjust: exact;
+                            print-color-adjust: exact;
+                        }
                     }
                 </style>
             </head>
@@ -242,53 +325,55 @@ export default function Show({ invoice }: ShowProps) {
                     <div class="logo-section">
                         ${logoUrl ?
                 `<img src="${logoUrl}" alt="Logo" onerror="this.style.display='none'"/>` :
-                `<div class="logo-placeholder">🏪</div>`
+                ''
             }
                     </div>
                     <div class="business-name">${invoice.business?.name || 'আপনার দোকান'}</div>
                     <div class="business-info">
-                        ${invoice.business?.address ? `📍 ${invoice.business.address}<br/>` : ''}
-                        ${invoice.business?.phone ? `📞 ${invoice.business.phone}` : ''}
+                        ${invoice.business?.address ? `<span>${invoice.business.address}</span>` : ''}
+                        ${invoice.business?.phone ? `<span>ফোন: ${invoice.business.phone}</span>` : ''}
                     </div>
                 </div>
                 
-                <!-- Invoice Meta -->
-                <div class="invoice-meta">
-                    <div>
-                        <div class="invoice-number">বিল# ${invoice.invoice_number}</div>
+                <!-- Invoice Title -->
+                <div class="invoice-title">বিক্রয় চালান / SALES INVOICE</div>
+                
+                <!-- Invoice Meta & Customer Info -->
+                <div class="info-section">
+                    <div class="info-box">
+                        <div class="info-label">চালান তথ্য</div>
+                        <div class="info-value">বিল নং: ${invoice.invoice_number}</div>
+                        <div class="info-details">তারিখ: ${formatDate(invoice.date)}</div>
                     </div>
-                    <div style="text-align: right;">
-                        <div>📅 ${formatDate(invoice.date)}</div>
+                    <div class="info-box">
+                        <div class="info-label">গ্রাহক তথ্য</div>
+                        <div class="info-value">${invoice.party?.name || 'সাধারণ গ্রাহক'}</div>
+                        ${invoice.party?.phone ? `<div class="info-details">মোবাইল: ${invoice.party.phone}</div>` : ''}
+                        ${invoice.party?.address ? `<div class="info-details">ঠিকানা: ${invoice.party.address}</div>` : ''}
                     </div>
-                </div>
-
-                <!-- Customer Info -->
-                <div class="customer">
-                    <div class="customer-label">গ্রাহক</div>
-                    <div class="customer-name">${invoice.party?.name || 'সাধারণ গ্রাহক'}</div>
-                    ${invoice.party?.phone ? `<div class="customer-details">📱 ${invoice.party.phone}</div>` : ''}
-                    ${invoice.party?.address ? `<div class="customer-details">📍 ${invoice.party.address}</div>` : ''}
                 </div>
 
                 <!-- Items Table -->
                 <table class="items">
                     <thead>
                         <tr>
-                            <th style="width: 40%">পণ্যের নাম</th>
-                            <th class="qty" style="width: 12%">পরিমাণ</th>
-                            <th style="width: 18%">দর</th>
-                            <th style="width: 15%">ওয়ারেন্টি</th>
-                            <th style="width: 15%">টাকা</th>
+                            <th style="width: 5%">ক্রম</th>
+                            <th style="width: 35%">পণ্যের বিবরণ</th>
+                            <th class="center" style="width: 12%">পরিমাণ</th>
+                            <th class="right" style="width: 15%">একক দর</th>
+                            <th class="center" style="width: 15%">ওয়ারেন্টি</th>
+                            <th class="right" style="width: 18%">মোট টাকা</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${(invoice.items || []).map(item => `
+                        ${(invoice.items || []).map((item, index) => `
                             <tr>
-                                <td>${item.product?.name || 'N/A'}</td>
-                                <td class="qty">${item.quantity}</td>
-                                <td>${formatTaka(item.unit_price)}</td>
-                                <td style="text-align: center;">${item.warranty_days && item.warranty_days > 0 ? `<span style="color: #006A4E; font-weight: 600;">🛡️ ${item.warranty_days} দিন</span>` : '<span style="color: #999;">-</span>'}</td>
-                                <td><strong>${formatTaka(item.total_price)}</strong></td>
+                                <td class="center">${index + 1}</td>
+                                <td class="product-name">${item.product?.name || 'N/A'}</td>
+                                <td class="center">${item.quantity}</td>
+                                <td class="right">${formatTaka(item.unit_price)}</td>
+                                <td class="center">${item.warranty_days && item.warranty_days > 0 ? `<span class="warranty-badge">${item.warranty_days} দিন</span>` : '-'}</td>
+                                <td class="right"><strong>${formatTaka(item.total_price)}</strong></td>
                             </tr>
                         `).join('')}
                     </tbody>
@@ -296,72 +381,73 @@ export default function Show({ invoice }: ShowProps) {
 
                 <!-- Warranty Notice -->
                 ${(invoice.items || []).some(item => item.warranty_days && item.warranty_days > 0) ? `
-                    <div style="background: #f0f7f5; border: 1px solid #006A4E; border-radius: 5px; padding: 8px; margin: 10px 0; font-size: 10px;">
-                        <strong style="color: #006A4E;">🛡️ ওয়ারেন্টি শর্তাবলী:</strong>
-                        <ul style="margin: 5px 0 0 15px; color: #555;">
+                    <div class="warranty-notice">
+                        <strong>ওয়ারেন্টি শর্তাবলী:</strong>
+                        <ul>
                             <li>ওয়ারেন্টি শুধুমাত্র কারিগরি সমস্যার জন্য প্রযোজ্য</li>
-                            <li>ভাংচুর বা অপব্যবহারে ওয়ারেন্টি বাতিল</li>
+                            <li>ভাংচুর বা অপব্যবহারে ওয়ারেন্টি বাতিল হবে</li>
                             <li>ওয়ারেন্টি দাবির জন্য এই বিলটি সংরক্ষণ করুন</li>
                         </ul>
                     </div>
                 ` : ''}
 
                 <!-- Totals -->
-                <div class="totals">
-                    <div class="totals-row">
-                        <span>উপমোট:</span>
-                        <span>${formatTaka(invoice.subtotal)}</span>
-                    </div>
-                    ${Number(invoice.discount) > 0 ? `
+                <div class="totals-section">
+                    <div class="totals">
                         <div class="totals-row">
-                            <span>ছাড়:</span>
-                            <span style="color: #28a745;">-${formatTaka(invoice.discount)}</span>
+                            <span>উপমোট:</span>
+                            <span>${formatTaka(invoice.subtotal)}</span>
                         </div>
-                    ` : ''}
-                    ${Number(invoice.tax) > 0 ? `
-                        <div class="totals-row">
-                            <span>কর/ভ্যাট:</span>
-                            <span>+${formatTaka(invoice.tax)}</span>
+                        ${Number(invoice.discount) > 0 ? `
+                            <div class="totals-row">
+                                <span>ছাড়:</span>
+                                <span>(-) ${formatTaka(invoice.discount)}</span>
+                            </div>
+                        ` : ''}
+                        ${Number(invoice.tax) > 0 ? `
+                            <div class="totals-row">
+                                <span>কর/ভ্যাট:</span>
+                                <span>(+) ${formatTaka(invoice.tax)}</span>
+                            </div>
+                        ` : ''}
+                        <div class="totals-row grand">
+                            <span>সর্বমোট:</span>
+                            <span>${formatTaka(invoice.total_amount)}</span>
                         </div>
-                    ` : ''}
-                    <div class="totals-row grand">
-                        <span>সর্বমোট:</span>
-                        <span>${formatTaka(invoice.total_amount)}</span>
+                        <div class="totals-row paid">
+                            <span>পরিশোধিত:</span>
+                            <span>${formatTaka(invoice.paid_amount)}</span>
+                        </div>
+                        ${Number(invoice.due_amount) > 0 ? `
+                            <div class="totals-row due">
+                                <span>বাকি:</span>
+                                <span>${formatTaka(invoice.due_amount)}</span>
+                            </div>
+                        ` : ''}
                     </div>
-                    <div class="totals-row paid">
-                        <span>পরিশোধ:</span>
-                        <span>${formatTaka(invoice.paid_amount)}</span>
-                    </div>
-                    ${Number(invoice.due_amount) > 0 ? `
-                        <div class="totals-row due">
-                            <span>বাকি:</span>
-                            <span>${formatTaka(invoice.due_amount)}</span>
-                        </div>
-                    ` : ''}
                 </div>
 
                 <!-- Status -->
                 <div class="status ${invoice.status}">
-                    ${invoice.status === 'paid' ? '✅ সম্পূর্ণ পরিশোধিত' :
-                invoice.status === 'partial' ? '⏳ বাকি আছে' : '❌ অপরিশোধিত'}
+                    ${invoice.status === 'paid' ? '● সম্পূর্ণ পরিশোধিত (PAID)' :
+                invoice.status === 'partial' ? '● আংশিক পরিশোধিত (PARTIAL)' : '● অপরিশোধিত (UNPAID)'}
                 </div>
 
-                <!-- Footer with Signature -->
-                <div class="footer" style="text-align: left;">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 15px;">
-                        <div style="text-align: left;">
-                            <div class="thank-you">🙏 ধন্যবাদ!</div>
-                            <div class="footer-msg">আপনার পৃষ্ঠপোষকতায় আমরা কৃতজ্ঞ</div>
-                            <div class="footer-msg">আবার আসবেন, সুস্বাগতম!</div>
-                        </div>
-                        <div style="text-align: right; min-width: 100px;">
-                            <div style="border-top: 1px solid #333; padding-top: 5px; margin-top: 20px;">
-                                <div style="font-size: 10px; color: #555;">বিক্রেতার স্বাক্ষর</div>
-                            </div>
-                        </div>
+                <!-- Signature Section -->
+                <div class="signature-section">
+                    <div class="signature-box">
+                        <div class="signature-line">গ্রাহকের স্বাক্ষর</div>
                     </div>
-                    <div class="footer-brand" style="text-align: center;">─────────────────</div>
-                    <div class="footer-brand" style="text-align: center;">বিল তৈরি: হিসাব রাখি</div>
+                    <div class="signature-box">
+                        <div class="signature-line">বিক্রেতার স্বাক্ষর</div>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="footer">
+                    <div class="thank-you">ধন্যবাদ!</div>
+                    <div class="footer-msg">আপনার পৃষ্ঠপোষকতায় আমরা কৃতজ্ঞ। আবার আসবেন!</div>
+                    <div class="footer-brand">বিল তৈরি: হিসাব রাখি সফটওয়্যার</div>
                 </div>
             </body>
             </html>
